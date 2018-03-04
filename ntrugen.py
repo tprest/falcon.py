@@ -1,5 +1,6 @@
 """Docstring."""
-from random import randint
+from random import randint, gauss
+from math import sqrt
 from fft import fft, ifft, add_fft, mul_fft, adj_fft, div_fft		# FFT operations
 
 q = 12 * 1024 + 1
@@ -181,8 +182,9 @@ def ntru_solve(f, g):
 def ntru_gen(n):
 	"""Docstring."""
 	while True:
-		f = [randint(-3, 3) for i in range(n)]
-		g = [randint(-3, 3) for i in range(n)]
+		sigma = 1.17 * sqrt(q / (2. * n))
+		f = [int(round(gauss(0, sigma))) for i in range(n)]
+		g = [int(round(gauss(0, sigma))) for i in range(n)]
 		try:
 			F, G = ntru_solve(f, g)
 			check_ntru(f, g, F, G)

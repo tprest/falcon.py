@@ -3,24 +3,7 @@ from common import split, merge									# Split, merge
 from fft import add, sub, mul, div, adj							# Operations in coef.
 from fft import add_fft, sub_fft, mul_fft, div_fft, adj_fft		# Operations in FFT
 from fft import split_fft, merge_fft, fft_ratio					# FFT
-
-
-def matmul(A, B):
-	"""Compute the product of two square matrices A and B.
-
-	Args:
-		A, B: matrices
-
-	Format: coefficient
-	"""
-	dim = len(A)
-	deg = len(A[0][0])
-	C = [[[0 for k in range(deg)] for j in range(dim)] for i in range(dim)]
-	for i in range(dim):
-		for j in range(dim):
-			for k in range(dim):
-				C[i][j] = add(C[i][j], mul(A[i][k], B[k][j]))
-	return C
+from sampler import sampler_z									# Gaussian sampler in Z
 
 
 def vecmatmul(t, B):
@@ -42,24 +25,6 @@ def vecmatmul(t, B):
 	return v
 
 
-def conjugate_transpose(B):
-	"""Compute the conjugate transpose of B.
-
-	Args:
-		B: a matrix
-
-	Format: coefficient
-	"""
-	nrows = len(B)
-	ncols = len(B[0])
-	deg = len(B[0][0])
-	Bt = [[[0 for k in range(deg)] for j in range(nrows)] for i in range(ncols)]
-	for i in range(nrows):
-		for j in range(ncols):
-			Bt[j][i] = adj(B[i][j])
-	return Bt
-
-
 def gram(B):
 	"""Compute the Gram matrix of B.
 
@@ -68,8 +33,17 @@ def gram(B):
 
 	Format: coefficient
 	"""
-	Bt = conjugate_transpose(B)
-	return matmul(B, Bt)
+	# Bt = conjugate_transpose(B)
+	# return matmul(B, Bt)
+	rows = range(len(B))
+	ncols = len(B[0])
+	deg = len(B[0][0])
+	G = [[[0 for coef in range(deg)] for j in rows] for i in rows]
+	for i in rows:
+		for j in rows:
+			for k in range(ncols):
+				G[i][j] = add(G[i][j], mul(B[i][k], adj(B[j][k])))
+	return G
 
 
 def ldl(G):
@@ -224,6 +198,33 @@ def ffnp_fft(t, T):
 	elif (n == 1):
 		z[0] = [round(t[0][0].real)]
 		z[1] = [round(t[1][0].real)]
+		return z
+
+
+def ffsampling_fft(t, T):
+	"""Compute the ffsampling of t, using T as auxilary information.
+
+	Args:
+		t: a vector
+		T: a ldl decomposition tree
+
+	Format: FFT
+	Corresponds to algorithm ffSampling of Falcon's documentation.
+	"""
+	n = len(t[0]) * fft_ratio
+	z = [0, 0]
+	if (n > 1):
+		l10, T0, T1 = T
+		z[1] = merge_fft(ffnp_fft(split_fft(t[1]), T1))
+		t0b = t[0]
+		t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
+		z[0] = merge_fft(ffnp_fft(split_fft(t0b), T0))
+		return z
+	elif (n == 1):
+		# z[0] = [round(t[0][0].real)]
+		# z[1] = [round(t[1][0].real)]
+		z[0] = [sampler_z(T[0], t[0][0].real)]
+		z[1] = [sampler_z(T[0], t[1][0].real)]
 		return z
 
 

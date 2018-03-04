@@ -1,4 +1,4 @@
-"""References: [DP16] https://eprint.iacr.org/2015/1014."""
+"""Reference: https://falcon-sign.info/."""
 
 # from numpy.random import randint
 from common import q
@@ -8,7 +8,7 @@ from sha3 import shake_256
 # from sampler import sampler_z
 from fft import fft, ifft, sub, neg
 from ntt import add_zq, mul_zq, div_zq
-from ffsampling import gram, ffldl, ffldl_fft, ffnp_fft, checknorm, vecmatmul
+from ffsampling import gram, ffldl_fft, checknorm, vecmatmul, ffsampling_fft
 from ntrugen import ntru_gen
 from random import randint
 
@@ -62,23 +62,26 @@ def normalize_tree(tree, sigma):
 
 
 class PublicKey:
-	"""Docstring."""
+	"""This class constains methods for performing public key operations in Falcon."""
 
-	def __init__(self, degree=None, modulus=None, hash_to_point=None, signature_bound=None, verify=None):
+	def __init__(self, sk):
 		"""Docstring."""
-		self.n = degree
-		self.q = modulus
-		self.hash_to_point = hash_to_point
-		self.signature_bound = signature_bound
-		self.verify = verify
+		self.n = sk.n
+		self.q = sk.q
+		self.hash_to_point = sk.hash_to_point
+		self.signature_bound = sk.signature_bound
+		self.verify = sk.verify
 
 
 class SecretKey:
 	"""
-	This class contains methods for performing secret key operations (and also public key operations) in the scheme Falcon.
+	This class contains methods for performing secret key operations (and also public key operations) in Falcon.
 
 	One can perform:
-	- initializing a secret key for n = 8, 16, 32, 64, 128, 256, 512, 1024, 2048, Phi = x**n+1, q = 12*1024+1
+	- initializing a secret key for:
+		- n = 8, 16, 32, 64, 128, 256, 512, 1024,
+		- phi = x ** n + 1,
+		- q = 12 * 1024 + 1
 	- finding a preimage t of a point c (both in ( Z[x] mod (Phi,q) )**2 ) such that t*B0 = c
 	- hashing a message to a point of Z[x] mod (Phi,q)
 	- sign a message
@@ -107,7 +110,7 @@ class SecretKey:
 		self.B0_fft = [[fft(elt) for elt in row] for row in self.B0]
 		self.G0_fft = [[fft(elt) for elt in row] for row in self.G0]
 
-		self.T = ffldl(self.G0)
+		# self.T = ffldl(self.G0)
 		self.T_fft = ffldl_fft(self.G0_fft)
 
 		"""Private key part 4: compute sigma and signature bound."""
@@ -121,11 +124,6 @@ class SecretKey:
 
 		"""Public key: h such that h*f = g mod (Phi,q)"""
 		self.h = div_zq(self.g, self.f)
-
-	def derivate_pk(self):
-		"""Generate a public key from the secret key."""
-		pk = PublicKey(self.n, self.q, self.hash_to_point, self.signature_bound, self.verify)
-		return pk
 
 	def get_coord(self, point):
 		"""Compute t such that t*B0 = c."""
@@ -166,7 +164,7 @@ class SecretKey:
 		c = point, [0] * self.n
 		t = self.get_coord(c)
 		t_fft = [fft(t[0]), fft(t[1])]
-		z_fft = ffnp_fft(t_fft, self.T_fft)
+		z_fft = ffsampling_fft(t_fft, self.T_fft)
 		z0 = [int(round(elt)) for elt in ifft(z_fft[0])]
 		z1 = [int(round(elt)) for elt in ifft(z_fft[1])]
 		z = z0, z1
@@ -209,8 +207,8 @@ class SecretKey:
 			return False
 		"""4. Verifies that the norm is small"""
 		norm_sign = sum(sum(elt**2 for elt in part) for part in s)
-		print "signature bound   = ", self.signature_bound
-		print "norm of signature = ", norm_sign
+		# print "signature bound   = ", self.signature_bound
+		# print "norm of signature = ", norm_sign
 		if norm_sign > self.signature_bound:
 			print "The squared norm of the signature is too big:", norm_sign
 			return False

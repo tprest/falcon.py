@@ -1,19 +1,19 @@
 """Docstring."""
 from common import q
-from fft import sub, mul, div, neg, fft, ifft, roots_dict
-from ntt import mul_zq, div_zq, roots_dict_Zq
+from fft import sub, mul, div, neg, fft, ifft
+from ntt import mul_zq, div_zq
 from sampler import sampler_z
 from ffsampling import ffldl, ffldl_fft, ffnp, ffnp_fft
 from ffsampling import checknorm, gram, sqnorm, vecmatmul
 from random import randint, random
 from math import pi, sqrt, floor, ceil, exp
-from ntru import ntru_dict
-from falcon import SecretKey
+from ntrugen import ntru_gen
+from falcon import SecretKey, PublicKey
 
 
 def test_fft(n):
 	"""Test the FFT."""
-	assert (n in roots_dict)
+	assert (n in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
 	print "n =", n
 	for i in range(10):
 		f = [randint(-3, 4) for j in range(n)]
@@ -30,7 +30,7 @@ def test_fft(n):
 
 def test_ntt(n):
 	"""Test the NTT."""
-	assert (n in roots_dict_Zq)
+	assert (n in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
 	print "n =", n
 	for i in range(10):
 		f = [randint(0, q - 1) for j in range(n)]
@@ -73,10 +73,9 @@ def test_ffnp(n, iterations):
 	print "1. the two versions (coefficient and FFT embeddings) are consistent"
 	print "2. ffnp output lattice vectors close to the targets"
 
-	print "n =", n, ", iterations =", iterations, "\n"
-	assert (n in roots_dict), "Please choose n to be a power-of-two"
-	f, g, F, G = ntru_dict[n]
-	q = 18433
+	print "n =", n, ", iterations =", iterations
+	assert (n in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]), "Please choose n to be a power-of-two"
+	f, g, F, G = ntru_gen(n)
 	B = [[g, neg(f)], [G, neg(F)]]
 	G0 = gram(B)
 	G0_fft = [[fft(elt) for elt in row] for row in G0]
@@ -102,21 +101,21 @@ def test_ffnp(n, iterations):
 		norm_zmc = int(round(sqnorm(diffB)))
 		m = max(m, norm_zmc)
 	th_bound = int((n / 4.) * sqgsnorm)
-	print "theoretic bound  = n/4 * gsnorm^2"
-	print "                 = (" + str(n) + " / 4) *", sqgsnorm
-	print "                 =", th_bound
-	print "empiric maximum  =", m
 	if m > th_bound:
 		print "Warning: the algorithm does not output vectors as short as it should"
 	else:
-		print "\nTest OK"
+		print "Test OK\n"
 
 
 def test_falcon(n, nb_iter):
 	"""Docstring."""
 	sk = SecretKey(n)
-	pk = sk.derivate_pk()
+	pk = PublicKey(sk)
 	for i in range(nb_iter):
 		message = ""
 		sig = sk.sign(message)
-		print pk.verify(message, sig)
+		if pk.verify(message, sig) is False:
+			print "Error"
+			return
+	print "OK"
+	return
