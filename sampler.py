@@ -1,7 +1,12 @@
-"""Docstring."""
+"""This file contains an implementation of a Gaussian sampler over Z."""
+
 from random import randint, uniform		# Generate uniform deviates
 from math import exp, floor				# Useful math functions
 
+
+"""Cumulative distribution table of the Gaussian distribution D of standard
+deviation 2, centerered on 0 and discretized over [0,1,2,...,18]. Each
+i-th pair of 64-bit integer represents the high and low bits of D[i]."""
 half_gaussian_cdt = [[0x55252c92c6309bbb, 0xeff1ff6ad56fd4b1],
                      [0xa0491cdd90d2d8a4, 0x4f0c0f90811e39be],
                      [0xd3edc464091b70d2, 0xcb37ce85d4b8dce9],
@@ -23,11 +28,15 @@ half_gaussian_cdt = [[0x55252c92c6309bbb, 0xeff1ff6ad56fd4b1],
                      [0xffffffffffffffff, 0xd852a065f5bc5806]]
 
 
+"""This is the standard deviation used for the half-Gaussian."""
 sigma0 = 2
 
 
 def sampler_half_gaussian():
-	"""Docstring."""
+	"""Sample an integer z according to the half-Gaussian distribution.
+
+	The CDF of the half-Gaussian distribution is given in half_gaussian_cdt.
+	"""
 	u0 = randint(0, (1 << 64) - 1)
 	z = 0
 	p0 = half_gaussian_cdt[z][0]
@@ -38,7 +47,7 @@ def sampler_half_gaussian():
 		p0 = half_gaussian_cdt[z][0]
 	if u0 < p0:
 		return z
-	# In the improbable case where u0 = p0, we have to draw additional bits
+	# In the very rare case where u0 = p0, we have to draw additional bits
 	if u0 == p0:
 		u1 = randint(0, (1 << 64) - 1)
 		p1 = half_gaussian_cdt[z][1]
@@ -49,7 +58,12 @@ def sampler_half_gaussian():
 
 
 def sampler_z(sigma, mu):
-	"""Docstring."""
+	"""Sample an integer z according to a discrete Gaussian distribution.
+
+	The discrete Gaussian must have:
+	- a standard deviation sigma =< sigma0
+	- a center mu which may be anywhere in R
+	"""
 	while(1):
 		z0 = sampler_half_gaussian()
 		b = randint(0, 1)

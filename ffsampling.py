@@ -1,4 +1,10 @@
-"""Docstring."""
+"""This file contains important algorithms for Falcon.
+
+- the Fast Fourier orthogonalization (in coefficient and FFT representation)
+- the Fast Fourier nearest plane (in coefficient and FFT representation)
+- the Fast Fourier sampling (only in FFT)
+.
+"""
 from common import split, merge									# Split, merge
 from fft import add, sub, mul, div, adj							# Operations in coef.
 from fft import add_fft, sub_fft, mul_fft, div_fft, adj_fft		# Operations in FFT
@@ -220,22 +226,3 @@ def ffsampling_fft(t, T):
 		z[0] = [sampler_z(T[0], t[0][0].real)]
 		z[1] = [sampler_z(T[0], t[1][0].real)]
 		return z
-
-
-def sqnorm(v):
-	"""Docstring."""
-	res = 0
-	for elt in v:
-		for coef in elt:
-			res += coef ** 2
-	return res
-
-
-def checknorm(f, g, q):
-	"""Docstring."""
-	sqnorm_fg = sqnorm([f, g])
-	ffgg = add(mul(f, adj(f)), mul(g, adj(g)))
-	Ft = div(adj(g), ffgg)
-	Gt = div(adj(f), ffgg)
-	sqnorm_FG = (q ** 2) * sqnorm([Ft, Gt])
-	return max(sqnorm_fg, sqnorm_FG)

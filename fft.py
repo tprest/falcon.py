@@ -6,12 +6,13 @@ The FFT implemented here is for polynomials in R[x]/(phi), with:
 The code is voluntarily very similar to the code of the NTT.
 It is probably possible to use templating to merge both implementations.
 """
+
 from common import split, merge				# Import split and merge
 from fft_constants import roots_dict		# Import constants useful for the FFT
 
 
 def split_fft(f_fft):
-	"""Split a polynomial f in two or three polynomials.
+	"""Split a polynomial f in two polynomials.
 
 	Args:
 		f: a polynomial
@@ -51,7 +52,7 @@ def merge_fft(f_list_fft):
 
 
 def fft(f):
-	"""Compute the FFT of a polynomial.
+	"""Compute the FFT of a polynomial mod (x ** n + 1).
 
 	Args:
 		f: a polynomial
@@ -72,7 +73,7 @@ def fft(f):
 
 
 def ifft(f_fft):
-	"""Compute the inverse FFT of a polynomial.
+	"""Compute the inverse FFT of a polynomial mod (x ** n + 1).
 
 	Args:
 		f: a FFT of a polynomial

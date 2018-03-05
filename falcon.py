@@ -1,15 +1,13 @@
-"""Reference: https://falcon-sign.info/."""
+"""Reference implementation of Falcon: https://falcon-sign.info/."""
 
-# from numpy.random import randint
 from common import q
 from numpy import set_printoptions
 from math import sqrt
 from sha3 import shake_256
-# from sampler import sampler_z
 from fft import fft, ifft, sub, neg
 from ntt import add_zq, mul_zq, div_zq
-from ffsampling import gram, ffldl_fft, checknorm, vecmatmul, ffsampling_fft
-from ntrugen import ntru_gen
+from ffsampling import gram, ffldl_fft, vecmatmul, ffsampling_fft
+from ntrugen import ntru_gen, gs_norm
 from random import randint
 
 
@@ -59,6 +57,7 @@ def normalize_tree(tree, sigma):
 		normalize_tree(tree[2], sigma)
 	else:
 		tree[0] = sigma / sqrt(tree[0].real)
+		tree[1] = 0
 
 
 class PublicKey:
@@ -114,12 +113,11 @@ class SecretKey:
 		self.T_fft = ffldl_fft(self.G0_fft)
 
 		"""Private key part 4: compute sigma and signature bound."""
-		sq_gs_norm = checknorm(self.f, self.g, q)
+		sq_gs_norm = gs_norm(self.f, self.g, q)
 		self.sigma = 1.28 * sqrt(sq_gs_norm)
 		self.signature_bound = 2 * self.n * (self.sigma**2)
 
 		"""Private key part 5: set leaves of tree to be the standard deviations."""
-		normalize_tree(self.T, self.sigma)
 		normalize_tree(self.T_fft, self.sigma)
 
 		"""Public key: h such that h*f = g mod (Phi,q)"""

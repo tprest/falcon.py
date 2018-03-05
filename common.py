@@ -34,3 +34,12 @@ def merge(f_list):
 		f[2 * i + 0] = f0[i]
 		f[2 * i + 1] = f1[i]
 	return f
+
+
+def sqnorm(v):
+	"""Compute the square euclidean norm of the vector v."""
+	res = 0
+	for elt in v:
+		for coef in elt:
+			res += coef ** 2
+	return res
