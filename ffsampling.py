@@ -166,12 +166,10 @@ def ffnp(t, T):
 	if (n > 1):
 		l10, T0, T1 = T
 		z[1] = merge(ffnp(split(t[1]), T1))
-		t0b = t[0]
 		t0b = add(t[0], mul(sub(t[1], z[1]), l10))
 		z[0] = merge(ffnp(split(t0b), T0))
 		return z
 	elif (n == 1):
-		# print t
 		z[0] = [round(t[0][0])]
 		z[1] = [round(t[1][0])]
 		return z
@@ -191,7 +189,6 @@ def ffnp_fft(t, T):
 	if (n > 1):
 		l10, T0, T1 = T
 		z[1] = merge_fft(ffnp_fft(split_fft(t[1]), T1))
-		t0b = t[0]
 		t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
 		z[0] = merge_fft(ffnp_fft(split_fft(t0b), T0))
 		return z
@@ -216,13 +213,10 @@ def ffsampling_fft(t, T):
 	if (n > 1):
 		l10, T0, T1 = T
 		z[1] = merge_fft(ffnp_fft(split_fft(t[1]), T1))
-		t0b = t[0]
 		t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
 		z[0] = merge_fft(ffnp_fft(split_fft(t0b), T0))
 		return z
 	elif (n == 1):
-		# z[0] = [round(t[0][0].real)]
-		# z[1] = [round(t[1][0].real)]
 		z[0] = [sampler_z(T[0], t[0][0].real)]
 		z[1] = [sampler_z(T[0], t[1][0].real)]
 		return z
