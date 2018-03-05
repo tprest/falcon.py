@@ -10,9 +10,9 @@ This repository contains the following files (in order of dependency):
 1. **common.py** contains shared functions and constants
 1. **fft_constants.py** contains precomputed constants used in the FFT
 1. **ntt_constants.py** contains precomputed constants used in the NTT
-1. **fft.py** contains a stand-alone implementation of the FFT over R[x](x<sup>n</sup> + 1)
-1. **ntt.py** contains a stand-alone implementation of the NTT over Z<sub>q</sub>[x](x<sup>n</sup> + 1)
-1. **ntrugen.py** generate polynomials f,g,F,G in Z[x](x<sup>n</sup> + 1) such that f G - g F = q
+1. **fft.py** contains a stand-alone implementation of the FFT over R[x] / (x<sup>n</sup> + 1)
+1. **ntt.py** contains a stand-alone implementation of the NTT over Z<sub>q</sub>[x] / (x<sup>n</sup> + 1)
+1. **ntrugen.py** generate polynomials f,g,F,G in Z[x] / (x<sup>n</sup> + 1) such that f G - g F = q
 1. **sampler.py** implements a Gaussian sampler over the integers
 1. **ffsampling.py** implements the fast Fourier sampling algorithm
 1. **falcon.py** implements Falcon
@@ -43,7 +43,7 @@ This repository contains the following files (in order of dependency):
 This is work in progress. It is not to be considered suitable for production.
 It can, to some extent, be considered reference code, but the "true" reference code of Falcon is on https://falcon-sign.info/.
 
-If you find errors or flaw, I will be very happy if you report them to me at thomas dot prest at ens dot fr.
+If you find errors or flaw, I will be very happy if you report them to me at the provided address.
 
 ## License
 
