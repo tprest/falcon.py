@@ -30,7 +30,7 @@ This repository contains the following files (in order of dependency):
 
 ## Todo
 
-- [ ] Encoding and decoding
+- [ ] Compress and decompress
 - [ ] Document all the docstrings
 
 
