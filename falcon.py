@@ -1,3 +1,5 @@
+"""SHOULD BE CLARIFIED:61,150,155,156,164"""
+
 """Reference implementation of Falcon: https://falcon-sign.info/."""
 
 from common import q
@@ -56,7 +58,7 @@ def normalize_tree(tree, sigma):
 		normalize_tree(tree[1], sigma)
 		normalize_tree(tree[2], sigma)
 	else:
-		tree[0] = sigma / sqrt(tree[0].real)
+		<???tree[0] = sigma / sqrt(tree[0].real)???>
 		tree[1] = 0
 
 
@@ -145,21 +147,21 @@ class SecretKey:
 		hash_instance = self.hash_function()
 		hash_instance.update(salt)
 		hash_instance.update(message)
-		digest = hash_instance.hexdigest(8 * n)  # We take twice the number of bytes that would be needed if there was no rejection
+		<???digest = hash_instance.hexdigest(8 * n)???>  # We take twice the number of bytes that would be needed if there was no rejection
 		hashed = [0 for i in range(n)]
 		i = 0
 		j = 0
 		while i < n:
-			elt = int(digest[4 * j:4 * (j + 1)], 16)  # Takes 2 bytes, transform them in a 16 bits integer
-			if elt < k * q:                      # Implicit rejection sampling
+			<???elt = int(digest[4 * j:4 * (j + 1)], 16)???>  # Takes 2 bytes, transform them in a 16 bits integer
+			<???if elt < k * q:                      # Implicit rejection sampling
 				hashed[i] = elt % q
-				i += 1
+				i += 1???>
 			j += 1
 		return hashed
 
 	def sample_preimage_fft(self, point):
 		"""Sample preimage."""
-		c = point, [0] * self.n
+		<???c = point, [0] * self.n???>
 		t = self.get_coord(c)
 		t_fft = [fft(t[0]), fft(t[1])]
 		z_fft = ffsampling_fft(t_fft, self.T_fft)

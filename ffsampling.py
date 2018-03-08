@@ -1,3 +1,5 @@
+"""SHOULD BE CLARIFIED:122,149,173,175,198,222,228,229"""
+
 """This file contains important algorithms for Falcon.
 
 - the Fast Fourier orthogonalization (in coefficient and FFT representation)
@@ -117,7 +119,7 @@ def ffldl(G):
 	except it's in polynomial representation.
 	"""
 	n = len(G[0][0])
-	L, D = ldl(G)
+	<???L, D = ldl(G)???>
 	# Coefficients of L, D are elements of R[x]/(x^n - x^(n/2) + 1), in coefficient representation
 	if (n > 2):
 		# A bisection is done on elements of a 2*2 diagonal matrix.
@@ -144,7 +146,7 @@ def ffldl_fft(G):
 	Corresponds to algorithm 15 (ffLDL) of Falcon's documentation.
 	"""
 	n = len(G[0][0]) * fft_ratio
-	L, D = ldl_fft(G)
+	<???L, D = ldl_fft(G)???>
 	# Coefficients of L, D are elements of R[x]/(x^n - x^(n/2) + 1), in FFT representation
 	if (n > 2):
 		# A bisection is done on elements of a 2*2 diagonal matrix.
@@ -168,9 +170,9 @@ def ffnp(t, T):
 	Format: coefficient
 	"""
 	n = len(t[0])
-	z = [None, None]
+	<???z = [None, None]???>
 	if (n > 1):
-		l10, T0, T1 = T
+		<???l10, T0, T1 = T???>
 		z[1] = merge(ffnp(split(t[1]), T1))
 		t0b = add(t[0], mul(sub(t[1], z[1]), l10))
 		z[0] = merge(ffnp(split(t0b), T0))
@@ -193,7 +195,7 @@ def ffnp_fft(t, T):
 	n = len(t[0]) * fft_ratio
 	z = [0, 0]
 	if (n > 1):
-		l10, T0, T1 = T
+		<???l10, T0, T1 = T???>
 		z[1] = merge_fft(ffnp_fft(split_fft(t[1]), T1))
 		t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
 		z[0] = merge_fft(ffnp_fft(split_fft(t0b), T0))
@@ -217,12 +219,12 @@ def ffsampling_fft(t, T):
 	n = len(t[0]) * fft_ratio
 	z = [0, 0]
 	if (n > 1):
-		l10, T0, T1 = T
+		<???l10, T0, T1 = T???>
 		z[1] = merge_fft(ffnp_fft(split_fft(t[1]), T1))
 		t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
 		z[0] = merge_fft(ffnp_fft(split_fft(t0b), T0))
 		return z
 	elif (n == 1):
-		z[0] = [sampler_z(T[0], t[0][0].real)]
-		z[1] = [sampler_z(T[0], t[1][0].real)]
+		z[0] = [sampler_z(<???T[0]???>, t[0][0].real)]
+		z[1] = [sampler_z(<???T[0]???>, t[1][0].real)]
 		return z

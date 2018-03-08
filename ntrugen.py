@@ -1,3 +1,5 @@
+"""SHOULD BE CLARIFIED:23,56,69,136-137,169,170"""
+
 """This file implements the section 3.8.2 of Falcon's documentation."""
 from random import gauss
 from math import sqrt
@@ -18,10 +20,10 @@ def karatsuba(a, b, n):
 		return [a[0] * b[0], 0]
 	else:
 		n2 = n // 2
-		a0 = a[:n2]
+		<???a0 = a[:n2]
 		a1 = a[n2:]
 		b0 = b[:n2]
-		b1 = b[n2:]
+		b1 = b[n2:]???>
 		ax = [a0[i] + a1[i] for i in range(n2)]
 		bx = [b0[i] + b1[i] for i in range(n2)]
 		a0b0 = karatsuba(a0, b0, n2)
@@ -51,7 +53,7 @@ def galois_conjugate(a):
 	Here, the Galois conjugate of a(x) is simply a(-x).
 	"""
 	n = len(a)
-	return [((-1) ** i) * a[i] for i in range(n)]
+	return [<???((-1) ** i) * a[i]???> for i in range(n)]
 
 
 def field_norm(a):
@@ -64,7 +66,7 @@ def field_norm(a):
 	ao = [a[2 * i + 1] for i in range(n2)]
 	ae_squared = karamul(ae, ae)
 	ao_squared = karamul(ao, ao)
-	res = ae_squared[:]
+	<???res = ae_squared[:]???>
 	for i in range(n2 - 1):
 		res[i + 1] -= ao_squared[i]
 	res[0] += ao_squared[n2 - 1]
@@ -130,9 +132,9 @@ def reduce(f, g, F, G):
 
 		fk = karamul(f, k)
 		gk = karamul(g, k)
-		for i in range(n):
+		<???for i in range(n):
 			F[i] -= fk[i] << (Size - size)
-			G[i] -= gk[i] << (Size - size)
+			G[i] -= gk[i] << (Size - size)???>
 	return F, G
 
 
@@ -164,8 +166,8 @@ def ntru_solve(f, g):
 		else:
 			return [- q * v], [q * u]
 	else:
-		fp = field_norm(f)
-		gp = field_norm(g)
+		<???fp = field_norm(f)???>
+		<???gp = field_norm(g)???>
 		Fp, Gp = ntru_solve(fp, gp)
 		F = karamul(lift(Fp), galois_conjugate(g))
 		G = karamul(lift(Gp), galois_conjugate(f))

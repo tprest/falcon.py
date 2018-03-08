@@ -1,3 +1,5 @@
+"""SHOULD BE CLARIFIED:33,52"""
+
 """This file contains an implementation of the NTT.
 
 The NTT implemented here is for polynomials in Z_q[x]/(phi), with:
@@ -28,7 +30,7 @@ def split_ntt(f_ntt):
 	Format: NTT
 	"""
 	n = len(f_ntt)
-	w = roots_dict_Zq[n]
+	<???w = roots_dict_Zq[n]???>
 	f0_ntt = [0] * (n // 2)
 	f1_ntt = [0] * (n // 2)
 	for i in range(n // 2):
@@ -47,7 +49,7 @@ def merge_ntt(f_list_ntt):
 	"""
 	f0_ntt, f1_ntt = f_list_ntt
 	n = 2 * len(f0_ntt)
-	w = roots_dict_Zq[n]
+	<???w = roots_dict_Zq[n]???>
 	f_ntt = [0] * n
 	for i in range(n // 2):
 		f_ntt[2 * i + 0] = (f0_ntt[i] + w[2 * i] * f1_ntt[i]) % q

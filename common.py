@@ -14,8 +14,8 @@ def split(f):
 	Format: coefficient
 	"""
 	n = len(f)
-	f0 = [f[2 * i + 0] for i in range(n // 2)]
-	f1 = [f[2 * i + 1] for i in range(n // 2)]
+	f0 = [f[2 * i + 0] for i in range(<???n // 2???>)]
+	f1 = [f[2 * i + 1] for i in range(<???n // 2???>)]
 	return [f0, f1]
 
 

@@ -1,0 +1,7 @@
+tricosset : 08/03/2018
+
+1. rajouter un fichier exemple qui fait tourner un code minimum (sk, pk, sign verify) comme décrit dans le "how to use" de README.md
+
+2. dans les différents codes les balises ouvrantes "<???" et fermantes "???>" indiquent un morceau de code qui manque de clarté (en début de fichier la ligne "SHOULD BE CLARIFIED:<set_of_lignes>" indique les lignes concernées par les balises "<???" et "???>"
+
+3. bien présenter le fichier sampler.py comme un exemple de code qui ne fait pas parti du schéma de signature et peut être remplacé par n'importe quel sampler avec les bonnes propriétés (préciser lesquels)

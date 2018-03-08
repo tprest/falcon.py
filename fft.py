@@ -1,3 +1,5 @@
+"""SHOULD BE CLARIFIED:27,48,72,73"""
+
 """This file contains an implementation of the FFT.
 
 The FFT implemented here is for polynomials in R[x]/(phi), with:
@@ -22,7 +24,7 @@ def split_fft(f_fft):
 	Corresponds to algorithm 1 (splitfft_2) of Falcon's documentation.
 	"""
 	n = len(f_fft)
-	w = roots_dict[n]
+	<???w = roots_dict[n]???>
 	f0_fft = [0] * (n // 2)
 	f1_fft = [0] * (n // 2)
 	for i in range(n // 2):
@@ -43,7 +45,7 @@ def merge_fft(f_list_fft):
 	"""
 	f0_fft, f1_fft = f_list_fft
 	n = 2 * len(f0_fft)
-	w = roots_dict[n]
+	<???w = roots_dict[n]???>
 	f_fft = [0] * n
 	for i in range(n // 2):
 		f_fft[2 * i + 0] = f0_fft[i] + w[2 * i] * f1_fft[i]
@@ -67,8 +69,8 @@ def fft(f):
 		f_fft = merge_fft([f0_fft, f1_fft])
 	elif (n == 2):
 		f_fft = [0] * n
-		f_fft[0] = f[0] + 1j * f[1]
-		f_fft[1] = f[0] - 1j * f[1]
+		f_fft[0] = f[0] + <???1j???> * f[1]
+		f_fft[1] = f[0] - <???1j???> * f[1]
 	return f_fft
 
 
