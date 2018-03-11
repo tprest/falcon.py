@@ -122,7 +122,10 @@ def mul_zq(f, g):
 
 def div_zq(f, g):
 	"""Division of two polynomials (coefficient representation)."""
-	return intt(div_ntt(ntt(f), ntt(g)))
+	try:
+		return intt(div_ntt(ntt(f), ntt(g)))
+	except ZeroDivisionError:
+		raise
 
 
 # def adj(f):

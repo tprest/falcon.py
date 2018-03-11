@@ -3,6 +3,7 @@ from random import gauss
 from math import sqrt
 from fft import fft, ifft, add_fft, mul_fft, adj_fft, div_fft		# FFT operations
 from fft import add, mul, div, adj									# regular operations
+from ntt import div_zq
 from common import sqnorm
 
 
@@ -198,8 +199,12 @@ def ntru_gen(n):
 		f = [int(round(gauss(0, sigma))) for i in range(n)]
 		g = [int(round(gauss(0, sigma))) for i in range(n)]
 		try:
+			h = div_zq(g, f)
 			F, G = ntru_solve(f, g)
 			if gs_norm(f, g, q) < (1.17 ** 2) * q:
 				return f, g, [int(coef) for coef in F], [int(coef) for coef in G]
-		except ValueError:
+		# If f is not invertible, a ZeroDivisionError is raised
+		# If the NTRU equation cannot be solved, a ValueError is raised
+		# In both cases, we start again
+		except (ZeroDivisionError, ValueError):
 			continue

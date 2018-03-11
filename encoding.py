@@ -9,12 +9,18 @@ def compress(v):
 		s += format((abs(elt) % (1 << 7)), '#09b')[:1:-1]
 		s += "0" * (abs(elt) >> 7) + "1"
 		u += s
-	return u
+	u += "0" * ((8 - len(u)) % 8)
+	return [int(u[8 * i: 8 * i + 8], 2) for i in range(len(u) // 8)]
 
 
-def decompress(u):
+def decompress(t):
 	"""Docstring."""
+	u = ""
+	for elt in t:
+		u += bin((1 << 8) ^ elt)[3:]
 	v = []
+	while u[-1] == "0":
+		u = u[:-1]
 	while u != "":
 		sign = 1 if u[0] == "1" else -1
 		low = int(u[7:0:-1], 2)

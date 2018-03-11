@@ -12,25 +12,6 @@ from fft import split_fft, merge_fft, fft_ratio					# FFT
 from sampler import sampler_z									# Gaussian sampler in Z
 
 
-def vecmatmul(t, B):
-	"""Compute the product t * B, where t is a vector and B is a square matrix.
-
-	Args:
-		B: a matrix
-
-	Format: coefficient
-	"""
-	nrows = len(B)
-	ncols = len(B[0])
-	deg = len(B[0][0])
-	assert(len(t) == nrows)
-	v = [[0 for k in range(deg)] for j in range(ncols)]
-	for j in range(ncols):
-		for i in range(nrows):
-			v[j] = add(v[j], mul(t[i], B[i][j]))
-	return v
-
-
 def gram(B):
 	"""Compute the Gram matrix of B.
 
@@ -39,8 +20,6 @@ def gram(B):
 
 	Format: coefficient
 	"""
-	# Bt = conjugate_transpose(B)
-	# return matmul(B, Bt)
 	rows = range(len(B))
 	ncols = len(B[0])
 	deg = len(B[0][0])
