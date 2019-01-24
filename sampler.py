@@ -1,7 +1,7 @@
 """This file contains an implementation of a Gaussian sampler over Z."""
 
-from random import randint, uniform		# Generate uniform deviates
-from math import exp, floor				# Useful math functions
+from random import randint, uniform        # Generate uniform deviates
+from math import exp, floor                # Useful math functions
 
 
 """Cumulative distribution table of the Gaussian distribution D of standard
@@ -33,43 +33,43 @@ sigma0 = 2
 
 
 def sampler_half_gaussian():
-	"""Sample an integer z according to the half-Gaussian distribution.
+    """Sample an integer z according to the half-Gaussian distribution.
 
-	The CDF of the half-Gaussian distribution is given in half_gaussian_cdt.
-	"""
-	u0 = randint(0, (1 << 64) - 1)
-	z = 0
-	p0 = half_gaussian_cdt[z][0]
-	# Scan the CDF table for the index where
-	# the uniform deviate x0 exceeds the value of the CDF
-	while u0 > p0:
-		z += 1
-		p0 = half_gaussian_cdt[z][0]
-	if u0 < p0:
-		return z
-	# In the very rare case where u0 = p0, we have to draw additional bits
-	if u0 == p0:
-		u1 = randint(0, (1 << 64) - 1)
-		p1 = half_gaussian_cdt[z][1]
-		if u1 < p1:
-			return z
-		else:
-			return z + 1
+    The CDF of the half-Gaussian distribution is given in half_gaussian_cdt.
+    """
+    u0 = randint(0, (1 << 64) - 1)
+    z = 0
+    p0 = half_gaussian_cdt[z][0]
+    # Scan the CDF table for the index where
+    # the uniform deviate x0 exceeds the value of the CDF
+    while u0 > p0:
+        z += 1
+        p0 = half_gaussian_cdt[z][0]
+    if u0 < p0:
+        return z
+    # In the very rare case where u0 = p0, we have to draw additional bits
+    if u0 == p0:
+        u1 = randint(0, (1 << 64) - 1)
+        p1 = half_gaussian_cdt[z][1]
+        if u1 < p1:
+            return z
+        else:
+            return z + 1
 
 
 def sampler_z(sigma, mu):
-	"""Sample an integer z according to a discrete Gaussian distribution.
+    """Sample an integer z according to a discrete Gaussian distribution.
 
-	The discrete Gaussian must have:
-	- a standard deviation sigma =< sigma0
-	- a center mu which may be anywhere in R
-	"""
-	while(1):
-		z0 = sampler_half_gaussian()
-		b = randint(0, 1)
-		z = (2 * b - 1) * z0 + b + floor(mu)
-		x = (z0 ** 2) / (2. * (sigma0 ** 2)) - ((z - mu) ** 2) / (2. * (sigma ** 2))
-		p = exp(x)
-		u = uniform(0, 1)
-		if u < p:
-			return z
+    The discrete Gaussian must have:
+    - a standard deviation sigma =< sigma0
+    - a center mu which may be anywhere in R
+    """
+    while(1):
+        z0 = sampler_half_gaussian()
+        b = randint(0, 1)
+        z = (2 * b - 1) * z0 + b + floor(mu)
+        x = (z0 ** 2) / (2. * (sigma0 ** 2)) - ((z - mu) ** 2) / (2. * (sigma ** 2))
+        p = exp(x)
+        u = uniform(0, 1)
+        if u < p:
+            return z
