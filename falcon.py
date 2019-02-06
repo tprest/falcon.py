@@ -18,12 +18,28 @@ import hashlib
 if sys.version_info < (3, 6):
     import sha3
 
+if sys.version_info >= (3, 4):
+    from importlib import reload  # Python 3.4+ only.
 
-import sys
 set_printoptions(linewidth=200, precision=10, suppress=True)
 
 
-def print_tree(tree, pref="       "):
+def infinity_max(vector):
+    return max(max(abs(x.real), abs(x.imag)) for x in vector)
+
+
+def infinity_max_tree(tree):
+    if len(tree) == 3:
+        max_0 = infinity_max(tree[0])
+        max_1 = infinity_max_tree(tree[1])
+        max_2 = infinity_max_tree(tree[2])
+        return max(max_0, max_1, max_2)
+
+    else:
+        return infinity_max(tree)
+
+
+def print_tree(tree, pref=""):
     """
     Display a LDL tree in a readable form.
 
@@ -32,22 +48,29 @@ def print_tree(tree, pref="       "):
 
     Format: coefficient or fft
     """
-    leaf = "\_____>"
-    top = "\______"
-    son1 = "|      "
-    son2 = "       "
+    leaf = "|_____> "
+    top = "|_______"
+    son1 = "|       "
+    son2 = "        "
     width = len(top)
 
     if len(tree) == 3:
-        print("" + pref[:-width] + top,)
-        sys.stdout.softspace = False
-        print(tree[0])
-        print_tree(tree[1], "" + pref + son1)
-        print_tree(tree[2], "" + pref + son2)
+        max_0 = infinity_max(tree[0])
+        if (pref == ""):
+            # print(pref + str(max_0))
+            print(pref + str(tree[0]))
+        else:
+            # print(pref[:-width] + top + str(max_0))
+            print(pref[:-width] + top + str(tree[0]))
+        max_1 = print_tree(tree[1], pref + son1)
+        max_2 = print_tree(tree[2], pref + son2)
+        return max(max_0, max_1, max_2)
+
     else:
-        print(pref[:-width] + leaf,)
-        sys.stdout.softspace = False
-        print(tree)
+        max_t = infinity_max(tree)
+        # print(pref[:-width] + leaf + str(max_t))
+        print(pref[:-width] + leaf + str(tree))
+        return max_t
 
 
 def normalize_tree(tree, sigma):
