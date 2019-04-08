@@ -197,9 +197,9 @@ def ffsampling_fft(t, T):
     z = [0, 0]
     if (n > 1):
         l10, T0, T1 = T
-        z[1] = merge_fft(ffnp_fft(split_fft(t[1]), T1))
+        z[1] = merge_fft(ffsampling_fft(split_fft(t[1]), T1))
         t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
-        z[0] = merge_fft(ffnp_fft(split_fft(t0b), T0))
+        z[0] = merge_fft(ffsampling_fft(split_fft(t0b), T0))
         return z
     elif (n == 1):
         z[0] = [sampler_z(T[0], t[0][0].real)]

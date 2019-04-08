@@ -175,7 +175,7 @@ class SecretKey:
 
         k = (2 ** 16) / q
         # We take twice the number of bits that would be needed if there was no rejection
-        emessage = message.encode('utf-8')
+        emessage = message  #.encode('utf-8')
         esalt = salt.encode('utf-8')
         hash_instance = self.hash_function()
         hash_instance.update(esalt)
@@ -219,14 +219,14 @@ class SecretKey:
             r += chr((salt >> (8 * i)) & 0xff)
         hashed = self.hash_to_point(message, r)
         """2. A short pre-image of this point is determined."""
-        s = self.sample_preimage_fft(hashed)
-        """3. The norm of the signature is checked."""
-        norm_sign = sum(sum(elt**2 for elt in part) for part in s)
-        if norm_sign < self.signature_bound:
-            return r, s
-        else:
-            print("redo")
-            return self.sign(message)
+        while(1):
+            s = self.sample_preimage_fft(hashed)
+            """3. The norm of the signature is checked."""
+            norm_sign = sum(sum(elt**2 for elt in part) for part in s)
+            if norm_sign < self.signature_bound:
+                return r, s
+            else:
+                print("redo")
 
     def verify(self, message, signature):
         """Verify a signature."""
@@ -236,8 +236,6 @@ class SecretKey:
         """2. Computes s0 + s1*h."""
         result = add_zq(s[0], mul_zq(s[1], self.h))
         """3. Verifies that the s0 + s1*h = hashed."""
-        # print "h =", self.h
-        # print "r =", r
         if any(result[i] != hashed[i] for i in range(self.n)):
             print("The signature does not correspond to the hash!")
             return False

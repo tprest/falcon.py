@@ -137,7 +137,7 @@ def test_ffnp(n, iterations):
         diffB = vecmatmul(diff, B)
         norm_zmc = int(round(sqnorm(diffB)))
         m = max(m, norm_zmc)
-    th_bound = int((n / 4.) * sqgsnorm)
+    th_bound = (n / 4.) * sqgsnorm
     if m > th_bound:
         print("Warning: the algorithm does not output vectors as short as it should")
         return False
@@ -177,10 +177,18 @@ def test(n, iterations=10):
     sys.stdout.write('Test NTT         : ')
     print("OK" if test_ntt(n, iterations) else "Not OK")
     sys.stdout.write('Test ntru_gen    : ')
-    print("OK" if test_ntrugen(n, iterations // 20) else "Not OK")
+    print("OK" if test_ntrugen(n, iterations // 10) else "Not OK")
     sys.stdout.write('Test ffnp        : ')
     print("OK" if test_ffnp(n, iterations) else "Not OK")
     sys.stdout.write('Test compression : ')
     print("OK" if test_compress(n, iterations) else "Not OK")
     sys.stdout.write('Test Falcon      : ')
     print("OK" if test_falcon(n, iterations) else "Not OK")
+
+
+# Run all the tests
+if (__name__ == "__main__"):
+    for i in range(2, 10):
+        n = (1 << i)
+        print("Test battery for n = {n}".format(n=n))
+        test(n)

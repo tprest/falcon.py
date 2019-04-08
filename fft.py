@@ -7,8 +7,8 @@ The code is voluntarily very similar to the code of the NTT.
 It is probably possible to use templating to merge both implementations.
 """
 
-from common import split, merge                # Import split and merge
-from fft_constants import roots_dict        # Import constants useful for the FFT
+from common import split, merge         # Import split and merge
+from fft_constants import roots_dict    # Import constants useful for the FFT
 
 
 def split_fft(f_fft):
