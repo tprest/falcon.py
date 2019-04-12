@@ -21,7 +21,7 @@ if sys.version_info < (3, 6):
 if sys.version_info >= (3, 4):
     from importlib import reload  # Python 3.4+ only.
 
-set_printoptions(linewidth=200, precision=10, suppress=True)
+set_printoptions(linewidth=200, precision=5, suppress=True)
 
 
 def infinity_max(vector):
@@ -151,6 +151,7 @@ class SecretKey:
         self.signature_bound = slack * 2 * self.n * (self.sigma**2)
 
         """Private key part 5: set leaves of tree to be the standard deviations."""
+        print_tree(self.T_fft)
         normalize_tree(self.T_fft, self.sigma)
 
         """Public key: h such that h*f = g mod (Phi,q)"""
