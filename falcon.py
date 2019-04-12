@@ -54,23 +54,22 @@ def print_tree(tree, pref=""):
     son2 = "        "
     width = len(top)
 
+    a = ""
     if len(tree) == 3:
-        max_0 = infinity_max(tree[0])
+        # max_0 = infinity_max(tree[0])
         if (pref == ""):
-            # print(pref + str(max_0))
-            print(pref + str(tree[0]))
+            a += pref + str(tree[0]) + "\n"
         else:
-            # print(pref[:-width] + top + str(max_0))
-            print(pref[:-width] + top + str(tree[0]))
-        max_1 = print_tree(tree[1], pref + son1)
-        max_2 = print_tree(tree[2], pref + son2)
-        return max(max_0, max_1, max_2)
+            a += pref[:-width] + top + str(tree[0]) + "\n"
+        a += print_tree(tree[1], pref + son1)
+        a += print_tree(tree[2], pref + son2)
+        return a
+        # return max(max_0, max_1, max_2)
 
     else:
-        max_t = infinity_max(tree)
-        # print(pref[:-width] + leaf + str(max_t))
-        print(pref[:-width] + leaf + str(tree))
-        return max_t
+        # max_t = infinity_max(tree)
+        return (pref[:-width] + leaf + str(tree) + "\n")
+        # return max_t
 
 
 def normalize_tree(tree, sigma):
@@ -145,15 +144,29 @@ class SecretKey:
         self.T_fft = ffldl_fft(self.G0_fft)
 
         """Private key part 4: compute sigma and signature bound."""
+        slack = 1.1
+        smooth = 1.28
         sq_gs_norm = gs_norm(self.f, self.g, q)
-        self.sigma = 1.28 * sqrt(sq_gs_norm)
-        self.signature_bound = 2 * self.n * (self.sigma**2)
+        self.sigma = smooth * sqrt(sq_gs_norm)
+        self.signature_bound = slack * 2 * self.n * (self.sigma**2)
 
         """Private key part 5: set leaves of tree to be the standard deviations."""
         normalize_tree(self.T_fft, self.sigma)
 
         """Public key: h such that h*f = g mod (Phi,q)"""
         self.h = div_zq(self.g, self.f)
+
+    def __repr__(self, verbose=True):
+        """Print the object in readable form."""
+        rep = "Private key for n = {n}:\n\n".format(n=self.n)
+        rep += "f = {f}\n".format(f=self.f)
+        rep += "g = {g}\n".format(g=self.g)
+        rep += "F = {F}\n".format(F=self.F)
+        rep += "G = {G}\n".format(G=self.G)
+        if verbose:
+            rep += "\nFFT tree\n"
+            rep += print_tree(self.T_fft, pref="")
+        return rep
 
     def get_coord_in_fft(self, point):
         """Compute t such that t*B0 = c."""
@@ -175,11 +188,10 @@ class SecretKey:
 
         k = (2 ** 16) / q
         # We take twice the number of bits that would be needed if there was no rejection
-        emessage = message  #.encode('utf-8')
+        emessage = message.encode('utf-8')
         esalt = salt.encode('utf-8')
         hash_instance = self.hash_function()
         hash_instance.update(esalt)
-        # hash_instance.update(message.encode(encoding='utf-8'))
         hash_instance.update(emessage)
         digest = hash_instance.hexdigest(8 * n)
         hashed = [0 for i in range(n)]
@@ -200,13 +212,21 @@ class SecretKey:
         B = self.B0_fft
         c = point, [0] * self.n
         t_fft = self.get_coord_in_fft(c)
+        # print("t0,", infinity_max(t_fft[0]))
+        # print("t1,", infinity_max(t_fft[1]))
         z_fft = ffsampling_fft(t_fft, self.T_fft)
+        # print("z0,", infinity_max(z_fft[0]))
+        # print("z1,", infinity_max(z_fft[1]))
+        # print("t_fft = {t_fft}".format(t_fft=t_fft))
+        # print("z_fft = {z_fft}".format(z_fft=z_fft))
         v0_fft = add_fft(mul_fft(z_fft[0], B[0][0]), mul_fft(z_fft[1], B[1][0]))
         v1_fft = add_fft(mul_fft(z_fft[0], B[0][1]), mul_fft(z_fft[1], B[1][1]))
         v0 = [int(round(elt)) for elt in ifft(v0_fft)]
         v1 = [int(round(elt)) for elt in ifft(v1_fft)]
         v = v0, v1
         s = [sub(c[0], v[0]), sub(c[1], v[1])]
+        # print("s0,", infinity_max(s[0]))
+        # print("s1,", infinity_max(s[1]))
         return s
 
     def sign(self, message, salt=None, err=0):

@@ -1,4 +1,9 @@
-"""This file implements tests for various parts of the Falcon.py library."""
+"""
+This file implements tests for various parts of the Falcon.py library.
+
+Test the code with:
+> make test
+"""
 from common import q, sqnorm
 from fft import add, sub, mul, div, neg, fft, ifft
 from ntt import mul_zq, div_zq
@@ -11,6 +16,8 @@ from ntrugen import karamul, ntru_gen, gs_norm
 from falcon import SecretKey, PublicKey
 from encoding import compress, decompress
 import sys
+if sys.version_info >= (3, 4):
+    from importlib import reload  # Python 3.4+ only.
 
 
 def vecmatmul(t, B):
@@ -41,7 +48,7 @@ def test_fft(n, iterations=10):
         k = div(h, f)
         k = [int(round(elt)) for elt in k]
         if k != g:
-            print("(f*g)/f =", k)
+            print("(f * g) / f =", k)
             print("g =", g)
             print("mismatch")
             return False
@@ -57,7 +64,7 @@ def test_ntt(n, iterations=10):
         try:
             k = div_zq(h, f)
             if k != g:
-                print("(f*g)/f =", k)
+                print("(f * g) / f =", k)
                 print("g =", g)
                 print("mismatch")
                 return False
@@ -139,7 +146,7 @@ def test_ffnp(n, iterations):
         m = max(m, norm_zmc)
     th_bound = (n / 4.) * sqgsnorm
     if m > th_bound:
-        print("Warning: the algorithm does not output vectors as short as it should")
+        print("Warning: the algorithm does not output vectors as short as expected")
         return False
     else:
         return True
@@ -163,11 +170,50 @@ def test_falcon(n, iterations=10):
     sk = SecretKey(n)
     pk = PublicKey(sk)
     for i in range(iterations):
-        message = "0".encode("UTF-8")
+        message = "0"
         sig = sk.sign(message)
         if pk.verify(message, sig) is False:
             return False
     return True
+
+
+def make_matrix(v):
+    n = len(v)
+    M = [[v[i] * v[j] for j in range(n)] for i in range(n)]
+    return M
+
+
+def test_covariance(n, iterations=100):
+    """
+    Compute the covariance matrix of the signatures distribution.
+
+    For an isotropic Gaussian, the covariance matrix is
+    proportional to the identity matrix.
+    """
+    sk = SecretKey(n)
+    liste_sig = []
+    mean = [0] * (2 * n)
+    Cov = [[0 for _ in range(2 * n)] for _ in range(2 * n)]
+    for i in range(iterations):
+        message = "0"
+        r, s = sk.sign(message)
+        s = s[0] + s[1]
+        mean = add(mean, s)
+        liste_sig += [s]
+    # mean = [elt / iterations for elt in mean]
+    # print(liste_sig)
+    print("mean = {mean}".format(mean=mean))
+    for s in liste_sig:
+        s = [iterations * elt for elt in s]
+        s = [(s[i] - mean[i]) for i in range(2 * n)]
+        M = make_matrix(s)
+        for i in range(2 * n):
+            Cov[i] = add(Cov[i], M[i])
+    for i in range(2 * n):
+        for j in range(2 * n):
+            Cov[i][j] /= (iterations ** 3)
+    print(Cov)
+    return Cov
 
 
 def test(n, iterations=10):
@@ -188,7 +234,7 @@ def test(n, iterations=10):
 
 # Run all the tests
 if (__name__ == "__main__"):
-    for i in range(2, 10):
+    for i in range(2, 8):
         n = (1 << i)
         print("Test battery for n = {n}".format(n=n))
         test(n)
