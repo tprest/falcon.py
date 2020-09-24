@@ -8,13 +8,15 @@ from common import q, sqnorm
 from fft import add, sub, mul, div, neg, fft, ifft
 from ntt import mul_zq, div_zq
 from sampler import sampler_z
+from samplerz import samplerz
 from ffsampling import ffldl, ffldl_fft, ffnp, ffnp_fft
 from ffsampling import gram
-from random import randint, random, gauss
+from random import randint, random, gauss, uniform
 from math import pi, sqrt, floor, ceil, exp
 from ntrugen import karamul, ntru_gen, gs_norm
-from falcon import SecretKey, PublicKey
+from falcon import SecretKey, PublicKey, Params, SALT_LEN, MAX_SIGMA
 from encoding import compress, decompress
+from scripts import saga
 import sys
 if sys.version_info >= (3, 4):
     from importlib import reload  # Python 3.4+ only.
@@ -154,15 +156,51 @@ def test_ffnp(n, iterations):
 
 def test_compress(n, iterations):
     """Test compression and decompression."""
-    sigma = 1.5 * sqrt(q)
+    try:
+        sigma = 1.5 * sqrt(q)
+        slen = Params[n]["sig_bytelen"] - SALT_LEN
+    except KeyError:
+        return True
     for i in range(iterations):
-        initial = [int(round(gauss(0, sigma))) for coef in range(n)]
-        compressed = compress(initial)
-        decompressed = decompress(compressed)
+        while(1):
+            initial = [int(round(gauss(0, sigma))) for coef in range(n)]
+            compressed = compress(initial, slen)
+            if compressed is not False:
+                break
+        decompressed = decompress(compressed, slen, n)
         # print compressed
         if decompressed != initial:
             return False
     return True
+
+
+def test_samplerz(nb_mu=100, nb_sig=100, nb_samp=1000):
+    """
+    Test our Gaussian sampler on a bunch of samples.
+    """
+    # Minimal size of a bucket for the chi-squared test (must be >= 5)
+    chi2_bucket = 10
+    # print("Testing the sampler over Z with:\n")
+    # print("- {a} different centers\n".format(a=nb_mu))
+    # print("- {a} different sigmas\n".format(a=nb_sig))
+    # print("- {a} samples per center and sigma\n".format(a=nb_samp))
+    assert(nb_samp >= 10 * chi2_bucket)
+    q = 12289
+    sigmin = 1.3
+    nb_rej = 0
+    for i in range(nb_mu):
+        mu = uniform(0, q)
+        for j in range(nb_sig):
+            sigma = uniform(sigmin, MAX_SIGMA)
+            list_samples = [samplerz(mu, sigma, sigmin) for _ in range(nb_samp)]
+            v = saga.UnivariateSamples(mu, sigma, list_samples)
+            if (v.is_valid is False):
+                nb_rej += 1
+    return True
+    if (nb_rej > 5 * ceil(saga.pmin * nb_mu * nb_sig)):
+        return False
+    else:
+        return True
 
 
 def test_falcon(n, iterations=10):
@@ -177,64 +215,33 @@ def test_falcon(n, iterations=10):
     return True
 
 
-def make_matrix(v):
-    n = len(v)
-    M = [[v[i] * v[j] for j in range(n)] for i in range(n)]
-    return M
-
-
-def test_covariance(n, iterations=100):
-    """
-    Compute the covariance matrix of the signatures distribution.
-
-    For an isotropic Gaussian, the covariance matrix is
-    proportional to the identity matrix.
-    """
-    sk = SecretKey(n)
-    liste_sig = []
-    mean = [0] * (2 * n)
-    Cov = [[0 for _ in range(2 * n)] for _ in range(2 * n)]
-    for i in range(iterations):
-        message = "0"
-        r, s = sk.sign(message)
-        s = s[0] + s[1]
-        mean = add(mean, s)
-        liste_sig += [s]
-    # mean = [elt / iterations for elt in mean]
-    # print(liste_sig)
-    print("mean = {mean}".format(mean=mean))
-    for s in liste_sig:
-        s = [iterations * elt for elt in s]
-        s = [(s[i] - mean[i]) for i in range(2 * n)]
-        M = make_matrix(s)
-        for i in range(2 * n):
-            Cov[i] = add(Cov[i], M[i])
-    for i in range(2 * n):
-        for j in range(2 * n):
-            Cov[i][j] /= (iterations ** 3)
-    print(Cov)
-    return Cov
-
-
 def test(n, iterations=10):
     """A battery of tests."""
     sys.stdout.write('Test FFT         : ')
     print("OK" if test_fft(n, iterations) else "Not OK")
     sys.stdout.write('Test NTT         : ')
     print("OK" if test_ntt(n, iterations) else "Not OK")
-    sys.stdout.write('Test ntru_gen    : ')
-    print("OK" if test_ntrugen(n, iterations // 10) else "Not OK")
+    # test_ntrugen is very costly, hence not performed in higher dimensions
+    if (n < 512):
+        sys.stdout.write('Test ntru_gen    : ')
+        print("OK" if test_ntrugen(n, iterations // 10) else "Not OK")
     sys.stdout.write('Test ffnp        : ')
     print("OK" if test_ffnp(n, iterations) else "Not OK")
-    sys.stdout.write('Test compression : ')
-    print("OK" if test_compress(n, iterations) else "Not OK")
-    sys.stdout.write('Test Falcon      : ')
-    print("OK" if test_falcon(n, iterations) else "Not OK")
+    # New test: test_samplerz
+    sys.stdout.write('Test samplerz    : ')
+    print("OK" if test_samplerz(iterations, iterations, 1000) else "Not OK")
+    # test_compress and test_falcon are only performed
+    # for parameter sets that are defined.
+    if(n in Params):
+        sys.stdout.write('Test compression : ')
+        print("OK" if test_compress(n, iterations) else "Not OK")
+        sys.stdout.write('Test Falcon      : ')
+        print("OK" if test_falcon(n, iterations) else "Not OK")
 
 
 # Run all the tests
 if (__name__ == "__main__"):
-    for i in range(2, 8):
+    for i in range(6, 11):
         n = (1 << i)
         print("Test battery for n = {n}".format(n=n))
         test(n)

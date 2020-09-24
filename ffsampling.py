@@ -10,6 +10,7 @@ from fft import add, sub, mul, div, adj                 # Operations in coef.
 from fft import add_fft, sub_fft, mul_fft, div_fft, adj_fft  # Ops in FFT
 from fft import split_fft, merge_fft, fft_ratio         # FFT
 from sampler import sampler_z                           # Gaussian sampler in Z
+from samplerz import samplerz                           # Gaussian sampler in Z
 
 
 def gram(B):
@@ -183,7 +184,7 @@ def ffnp_fft(t, T):
         return z
 
 
-def ffsampling_fft(t, T):
+def ffsampling_fft(t, T, sigmin):
     """Compute the ffsampling of t, using T as auxilary information.
 
     Args:
@@ -197,11 +198,11 @@ def ffsampling_fft(t, T):
     z = [0, 0]
     if (n > 1):
         l10, T0, T1 = T
-        z[1] = merge_fft(ffsampling_fft(split_fft(t[1]), T1))
+        z[1] = merge_fft(ffsampling_fft(split_fft(t[1]), T1, sigmin))
         t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
-        z[0] = merge_fft(ffsampling_fft(split_fft(t0b), T0))
+        z[0] = merge_fft(ffsampling_fft(split_fft(t0b), T0, sigmin))
         return z
     elif (n == 1):
-        z[0] = [sampler_z(T[0], t[0][0].real)]
-        z[1] = [sampler_z(T[0], t[1][0].real)]
+        z[0] = [samplerz(t[0][0].real, T[0], sigmin)]
+        z[1] = [samplerz(t[1][0].real, T[0], sigmin)]
         return z
