@@ -7,7 +7,6 @@ Test the code with:
 from common import q, sqnorm
 from fft import add, sub, mul, div, neg, fft, ifft
 from ntt import mul_zq, div_zq
-from sampler import sampler_z
 from samplerz import samplerz
 from ffsampling import ffldl, ffldl_fft, ffnp, ffnp_fft
 from ffsampling import gram
