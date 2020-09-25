@@ -189,7 +189,7 @@ class SecretKey:
         self.T_fft = ffldl_fft(self.G0_fft)
 
         # Normalize Falcon tree
-        print_tree(self.T_fft)
+        # print_tree(self.T_fft)
         normalize_tree(self.T_fft, self.sigma)
 
         # The public key is a polynomial such that h*f = g mod (Phi,q)
