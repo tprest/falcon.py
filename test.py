@@ -7,13 +7,13 @@ Test the code with:
 from common import q, sqnorm
 from fft import add, sub, mul, div, neg, fft, ifft
 from ntt import mul_zq, div_zq
-from samplerz import samplerz
+from samplerz import samplerz, MAX_SIGMA
 from ffsampling import ffldl, ffldl_fft, ffnp, ffnp_fft
 from ffsampling import gram
 from random import randint, random, gauss, uniform
 from math import pi, sqrt, floor, ceil, exp
 from ntrugen import karamul, ntru_gen, gs_norm
-from falcon import SecretKey, PublicKey, Params, SALT_LEN, MAX_SIGMA
+from falcon import SecretKey, PublicKey, Params, SALT_LEN
 from encoding import compress, decompress
 from scripts import saga
 import sys
@@ -89,28 +89,6 @@ def test_ntrugen(n, iterations=10):
         if check_ntru(f, g, F, G) is False:
             return False
     return True
-
-
-def gaussian(sigma, mu, x):
-    """The Gaussian function."""
-    return exp(- ((x - mu) ** 2) / (2. * (sigma ** 2)))
-
-
-def test_sampler_z(sigma, mu, iterations):
-    """Test the integer Gaussian sampler."""
-    den = sqrt(2 * pi) * sigma
-    start = int(floor(mu - 10 * sigma))
-    end = int(ceil(mu + 10 * sigma))
-    index = range(start, end)
-    ref_table = {z: int(round(iterations * gaussian(sigma, mu, z)) / den) for z in index}
-    obs_table = {z: 0 for z in index}
-    for i in range(iterations):
-        z = sampler_z(sigma, mu)
-        obs_table[z] += 1
-    delta = sum(abs(ref_table[i] - obs_table[i]) for i in index) / float(iterations)
-    # print obs_table
-    print(delta)
-    # return obs_table
 
 
 def test_ffnp(n, iterations):

@@ -98,7 +98,7 @@ Test samplerz    : OK
 Test compression : OK
 Test Falcon      : OK
 ```
-## Benchmarking
+## Profiling
 
 I included a makefile target to performing profiling on the code. If you type `make profile` on a Linux machine, you should obtain something along these lines:
 

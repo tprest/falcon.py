@@ -88,12 +88,14 @@ def lift(a):
 def bitsize(a):
     """
     Compute the bitsize of an element of Z (not counting the sign).
+    The bitsize is rounded to the next multiple of 8.
+    This makes the function slightly imprecise, but faster to compute.
     """
     val = abs(a)
     res = 0
     while val:
-        res += 1
-        val >>= 1
+        res += 8
+        val >>= 8
     return res
 
 

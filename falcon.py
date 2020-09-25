@@ -11,30 +11,25 @@ from ntt import sub_zq, mul_zq, div_zq
 from ffsampling import gram, ffldl_fft, ffsampling_fft
 from ntrugen import ntru_gen, gs_norm
 from encoding import compress, decompress
-
-# If Python has version >= 3.6, then the built-in hashlib has shake_256.
-# Otherwise, sha3 has to be loaded to monkey-patch hashlib.
-# See https://pypi.python.org/pypi/pysha3.
+# https://pycryptodome.readthedocs.io/en/latest/src/hash/shake256.html
+from Crypto.Hash import SHAKE256
 import sys
-import hashlib
-if sys.version_info < (3, 6):
-    import sha3
-
+# For debugging purposes
+if sys.version_info >= (3, 4):
+    from importlib import reload  # Python 3.4+ only.
 # Randomness
 if sys.version_info < (3, 6):
     from os import urandom as randombytes
 else:
     from secrets import token_bytes as randombytes
 
-if sys.version_info >= (3, 4):
-    from importlib import reload  # Python 3.4+ only.
-
 set_printoptions(linewidth=200, precision=5, suppress=True)
 
 
+# Bytelength of the signing salt
 SALT_LEN = 40
+# Max Gram-Schmidt norm of the private basis
 MAX_GS_NORM = 129.701241706
-MAX_SIGMA = 1.8205
 
 
 # Parameter sets for Falcon:
@@ -166,7 +161,6 @@ class SecretKey:
         """Initialize a secret key."""
         # Public parameters
         self.n = n
-        self.hash_function = hashlib.shake_256
         self.sigma = Params[n]["sigma"]
         self.sigmin = Params[n]["sigmin"]
         self.signature_bound = Params[n]["sig_bound"]
@@ -228,22 +222,23 @@ class SecretKey:
         Inspired by the Parse function from NewHope.
         """
         n = self.n
-        if q > 2 ** 16:
+        if q > (1 << 16):
             raise ValueError("The modulus is too large")
 
-        k = (2 ** 16) / q
-        # We take twice the number of bits that would be needed if there was no rejection
+        k = (1 << 16) // q
         emessage = message.encode('utf-8')
-        hash_instance = self.hash_function()
-        hash_instance.update(salt)
-        hash_instance.update(emessage)
-        digest = hash_instance.hexdigest(8 * n)
+        shake = SHAKE256.new()
+        shake.update(salt)
+        shake.update(emessage)
+        # digest = hash_instance.hexdigest(8 * n)
         hashed = [0 for i in range(n)]
         i = 0
         j = 0
         while i < n:
             # Takes 2 bytes, transform them in a 16 bits integer
-            elt = int(digest[4 * j: 4 * (j + 1)], 16)
+            twobytes = shake.read(2)
+            elt = (twobytes[0] << 8) + twobytes[1]  # This breaks in Python 2.x
+            # elt = int(digest[4 * j: 4 * (j + 1)], 16)
             # Implicit rejection sampling
             if elt < k * q:
                 hashed[i] = elt % q
@@ -273,8 +268,8 @@ class SecretKey:
         # short enough (both the Euclidean norm and the bytelength)
         while(1):
             s = self.sample_preimage_fft(hashed)
-            norm_sign = sum(coef**2 for coef in s[0])
-            norm_sign += sum(coef**2 for coef in s[1])
+            norm_sign = sum(coef ** 2 for coef in s[0])
+            norm_sign += sum(coef ** 2 for coef in s[1])
             # Check the Euclidean norm
             if norm_sign < self.signature_bound:
                 enc_s = compress(s[1], self.sig_bytelen - SALT_LEN)
@@ -295,8 +290,8 @@ class SecretKey:
         s0 = sub_zq(hashed, mul_zq(s1, self.h))
         s0 = [(coef + (q >> 1)) % q - (q >> 1) for coef in s0]
         # Check that the signature is short enough
-        norm_sign = sum(coef**2 for coef in s0)
-        norm_sign += sum(coef**2 for coef in s1)
+        norm_sign = sum(coef ** 2 for coef in s0)
+        norm_sign += sum(coef ** 2 for coef in s1)
         if norm_sign > self.signature_bound:
             print("Squared norm of signature is too large:", norm_sign)
             return False
