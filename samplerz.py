@@ -135,17 +135,20 @@ def samplerz(mu, sigma, sigmin):
     Output:
     - a sample z from the distribution D_{Z, mu, sigma}.
     """
-    assert(sigma < MAX_SIGMA), sigma
-    assert(sigmin < sigma)
-    assert(1 < sigmin)
+    # assert(sigma < MAX_SIGMA), sigma
+    # assert(sigmin < sigma)
+    # assert(1 < sigmin)
     s = int(floor(mu))
     r = mu - s
     dss = 1 / (2 * sigma * sigma)
     ccs = sigmin / sigma
     while(1):
+        # Sampler z0 from a Half-Gaussian
         z0 = basesampler()
+        # Convert z0 into a pseudo-Gaussian sample z
         b = randbits(8) & 1
         z = b + (2 * b - 1) * z0
+        # Rejection sampling to obtain a true Gaussian sample
         x = ((z - r) ** 2) * dss
         x -= (z0 ** 2) * INV_2SIGMA2
         if berexp(x, ccs):

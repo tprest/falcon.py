@@ -61,42 +61,42 @@ Upon first use, consider running `make test` to make sure that the code runs pro
 
 ```
 python3 test.py
-Test battery for n = 64
-Test FFT         : OK
-Test NTT         : OK
-Test ntru_gen    : OK
-Test ffnp        : OK
-Test samplerz    : OK
 Test battery for n = 128
-Test FFT         : OK
-Test NTT         : OK
-Test ntru_gen    : OK
-Test ffnp        : OK
-Test samplerz    : OK
-Test compression : OK
-Test Falcon      : OK
+Test FFT            : OK          (1.958 msec / execution)
+Test NTT            : OK          (2.123 msec / execution)
+Test NTRUGen        : OK         (994.61 msec / execution)
+Test ffNP           : OK         (71.576 msec / execution)
+Test SamplerZ       : OK          (0.026 msec / execution)
+Test Compress       : OK          (0.364 msec / execution)
+Test Signature      : OK        (449.928 msec / execution)
+
 Test battery for n = 256
-Test FFT         : OK
-Test NTT         : OK
-Test ntru_gen    : OK
-Test ffnp        : OK
-Test samplerz    : OK
-Test compression : OK
-Test Falcon      : OK
+Test FFT            : OK          (4.229 msec / execution)
+Test NTT            : OK          (4.705 msec / execution)
+Test NTRUGen        : OK       (4507.603 msec / execution)
+Test ffNP           : OK         (38.879 msec / execution)
+Test SamplerZ       : OK          (0.026 msec / execution)
+Test Compress       : OK          (0.757 msec / execution)
+Test Signature      : OK        (906.475 msec / execution)
+
 Test battery for n = 512
-Test FFT         : OK
-Test NTT         : OK
-Test ffnp        : OK
-Test samplerz    : OK
-Test compression : OK
-Test Falcon      : OK
+Test FFT            : OK          (9.288 msec / execution)
+Test NTT            : OK         (10.539 msec / execution)
+Test NTRUGen        : OK        (9192.46 msec / execution)
+Test ffNP           : OK        (148.918 msec / execution)
+Test SamplerZ       : OK          (0.037 msec / execution)
+Test Compress       : OK          (2.006 msec / execution)
+Test Signature      : OK        (387.113 msec / execution)
+
 Test battery for n = 1024
-Test FFT         : OK
-Test NTT         : OK
-Test ffnp        : OK
-Test samplerz    : OK
-Test compression : OK
-Test Falcon      : OK
+Test FFT            : OK         (26.273 msec / execution)
+Test NTT            : OK         (22.287 msec / execution)
+Test NTRUGen        : OK       (19955.23 msec / execution)
+Test ffNP           : OK         (313.78 msec / execution)
+Test SamplerZ       : OK          (0.026 msec / execution)
+Test Compress       : OK          (3.045 msec / execution)
+Test Signature      : OK       (3773.056 msec / execution)
+
 ```
 ## Profiling
 

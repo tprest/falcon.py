@@ -11,11 +11,13 @@ from samplerz import samplerz, MAX_SIGMA
 from ffsampling import ffldl, ffldl_fft, ffnp, ffnp_fft
 from ffsampling import gram
 from random import randint, random, gauss, uniform
-from math import pi, sqrt, floor, ceil, exp
+from math import sqrt, ceil
 from ntrugen import karamul, ntru_gen, gs_norm
 from falcon import SecretKey, PublicKey, Params, SALT_LEN
 from encoding import compress, decompress
 from scripts import saga
+# https://stackoverflow.com/a/25823885/4143624
+from timeit import default_timer as timer
 import sys
 if sys.version_info >= (3, 4):
     from importlib import reload  # Python 3.4+ only.
@@ -75,7 +77,7 @@ def test_ntt(n, iterations=10):
 
 
 def check_ntru(f, g, F, G):
-    """Check that f * G - g * F = 1 mod (x ** n + 1)."""
+    """Check that f * G - g * F = q mod (x ** n + 1)."""
     a = karamul(f, G)
     b = karamul(g, F)
     c = [a[i] - b[i] for i in range(len(f))]
@@ -125,7 +127,7 @@ def test_ffnp(n, iterations):
         m = max(m, norm_zmc)
     th_bound = (n / 4.) * sqgsnorm
     if m > th_bound:
-        print("Warning: the algorithm does not output vectors as short as expected")
+        print("Warning: ffnp does not output vectors as short as expected")
         return False
     else:
         return True
@@ -145,7 +147,6 @@ def test_compress(n, iterations):
             if compressed is not False:
                 break
         decompressed = decompress(compressed, slen, n)
-        # print compressed
         if decompressed != initial:
             return False
     return True
@@ -154,15 +155,12 @@ def test_compress(n, iterations):
 def test_samplerz(nb_mu=100, nb_sig=100, nb_samp=1000):
     """
     Test our Gaussian sampler on a bunch of samples.
+    This is done by using a light version of the SAGA test suite,
+    see ia.cr/2019/1411.
     """
     # Minimal size of a bucket for the chi-squared test (must be >= 5)
     chi2_bucket = 10
-    # print("Testing the sampler over Z with:\n")
-    # print("- {a} different centers\n".format(a=nb_mu))
-    # print("- {a} different sigmas\n".format(a=nb_sig))
-    # print("- {a} samples per center and sigma\n".format(a=nb_samp))
     assert(nb_samp >= 10 * chi2_bucket)
-    q = 12289
     sigmin = 1.3
     nb_rej = 0
     for i in range(nb_mu):
@@ -180,7 +178,7 @@ def test_samplerz(nb_mu=100, nb_sig=100, nb_samp=1000):
         return True
 
 
-def test_falcon(n, iterations=10):
+def test_signature(n, iterations=10):
     """Test Falcon."""
     sk = SecretKey(n)
     pk = PublicKey(sk)
@@ -192,33 +190,49 @@ def test_falcon(n, iterations=10):
     return True
 
 
-def test(n, iterations=10):
+def wrapper_test(my_test, name, n, iterations):
+    """
+    Common wrapper for tests. Run the test, print whether it is successful,
+    and if it is, print the running time of each execution.
+    """
+    d = {True: "OK    ", False: "Not OK"}
+    start = timer()
+    rep = my_test(n, iterations)
+    end = timer()
+    message = "Test {name}".format(name=name)
+    message = message.ljust(20) + ": " + d[rep]
+    if rep is True:
+        diff = end - start
+        msec = round(diff * 1000 / iterations, 3)
+        message += " ({msec} msec / execution)".format(msec=msec).rjust(30)
+    print(message)
+
+
+# Dirty trick to fit test_samplerz into our test wrapper
+def test_samplerz_simple(n, iterations):
+    return test_samplerz(10, 10, iterations // 100)
+
+
+def test(n, iterations=1000):
     """A battery of tests."""
-    sys.stdout.write('Test FFT         : ')
-    print("OK" if test_fft(n, iterations) else "Not OK")
-    sys.stdout.write('Test NTT         : ')
-    print("OK" if test_ntt(n, iterations) else "Not OK")
-    # test_ntrugen is very costly, hence not performed in higher dimensions
-    if (n < 512):
-        sys.stdout.write('Test ntru_gen    : ')
-        print("OK" if test_ntrugen(n, iterations // 10) else "Not OK")
-    sys.stdout.write('Test ffnp        : ')
-    print("OK" if test_ffnp(n, iterations) else "Not OK")
-    # New test: test_samplerz
-    sys.stdout.write('Test samplerz    : ')
-    print("OK" if test_samplerz(iterations, iterations, 1000) else "Not OK")
-    # test_compress and test_falcon are only performed
+    wrapper_test(test_fft, "FFT", n, iterations)
+    wrapper_test(test_ntt, "NTT", n, iterations)
+    # Some test/functions are super slow, hence executed fewer times
+    wrapper_test(test_ntrugen, "NTRUGen", n, iterations // 500)
+    wrapper_test(test_ffnp, "ffNP", n, iterations // 10)
+    wrapper_test(test_samplerz_simple, "SamplerZ", n, 100 * iterations)
+    # test_compress and test_signature are only performed
     # for parameter sets that are defined.
-    if(n in Params):
-        sys.stdout.write('Test compression : ')
-        print("OK" if test_compress(n, iterations) else "Not OK")
-        sys.stdout.write('Test Falcon      : ')
-        print("OK" if test_falcon(n, iterations) else "Not OK")
+    if (n in Params):
+        wrapper_test(test_compress, "Compress", n, iterations)
+        wrapper_test(test_signature, "Signature", n, iterations // 10)
+    print("")
 
 
 # Run all the tests
 if (__name__ == "__main__"):
-    for i in range(6, 11):
+    for i in range(7, 11):
         n = (1 << i)
+        it = 1000
         print("Test battery for n = {n}".format(n=n))
-        test(n)
+        test(n, it)

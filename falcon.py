@@ -9,7 +9,7 @@ from math import sqrt
 from fft import fft, ifft, sub, neg, add_fft, mul_fft
 from ntt import sub_zq, mul_zq, div_zq
 from ffsampling import gram, ffldl_fft, ffsampling_fft
-from ntrugen import ntru_gen, gs_norm
+from ntrugen import ntru_gen
 from encoding import compress, decompress
 # https://pycryptodome.readthedocs.io/en/latest/src/hash/shake256.html
 from Crypto.Hash import SHAKE256
@@ -28,8 +28,6 @@ set_printoptions(linewidth=200, precision=5, suppress=True)
 
 # Bytelength of the signing salt
 SALT_LEN = 40
-# Max Gram-Schmidt norm of the private basis
-MAX_GS_NORM = 129.701241706
 
 
 # Parameter sets for Falcon:
@@ -146,13 +144,13 @@ class SecretKey:
     This class contains methods for performing
     secret key operations (and also public key operations) in Falcon.
 
-    One can perform:
-    - initializing a secret key for:
-        - n = 8, 16, 32, 64, 128, 256, 512, 1024,
+    One can:
+    - initialize a secret key for:
+        - n = 128, 256, 512, 1024,
         - phi = x ** n + 1,
         - q = 12 * 1024 + 1
-    - finding a preimage t of a point c (both in ( Z[x] mod (Phi,q) )**2 ) such that t*B0 = c
-    - hashing a message to a point of Z[x] mod (Phi,q)
+    - find a preimage t of a point c (both in ( Z[x] mod (Phi,q) )**2 ) such that t*B0 = c
+    - hash a message to a point of Z[x] mod (Phi,q)
     - sign a message
     - verify the signature of a message
     """
@@ -167,29 +165,18 @@ class SecretKey:
         self.sig_bytelen = Params[n]["sig_bytelen"]
 
         # Compute NTRU polynomials f, g, F, G verifying fG - gF = q mod Phi
-        while(1):
-            self.f, self.g, self.F, self.G = ntru_gen(n)
-            sq_gs_norm = gs_norm(self.f, self.g, q)
-            if (sq_gs_norm <= MAX_GS_NORM ** 2):
-                break
-
-        # Compute fft's of f, g, F, G
-        self.f_fft = fft(self.f)
-        self.g_fft = fft(self.g)
-        self.F_fft = fft(self.F)
-        self.G_fft = fft(self.G)
+        self.f, self.g, self.F, self.G = ntru_gen(n)
 
         # From f, g, F, G, compute the basis B0 of a NTRU lattice
         # as well as its Gram matrix and their fft's.
-        self.B0 = [[self.g, neg(self.f)], [self.G, neg(self.F)]]
-        self.G0 = gram(self.B0)
-        self.B0_fft = [[fft(elt) for elt in row] for row in self.B0]
-        self.G0_fft = [[fft(elt) for elt in row] for row in self.G0]
+        B0 = [[self.g, neg(self.f)], [self.G, neg(self.F)]]
+        G0 = gram(B0)
+        self.B0_fft = [[fft(elt) for elt in row] for row in B0]
+        G0_fft = [[fft(elt) for elt in row] for row in G0]
 
-        self.T_fft = ffldl_fft(self.G0_fft)
+        self.T_fft = ffldl_fft(G0_fft)
 
         # Normalize Falcon tree
-        # print_tree(self.T_fft)
         normalize_tree(self.T_fft, self.sigma)
 
         # The public key is a polynomial such that h*f = g mod (Phi,q)
@@ -207,15 +194,6 @@ class SecretKey:
             rep += print_tree(self.T_fft, pref="")
         return rep
 
-    def get_coord_in_fft(self, point):
-        """Compute t such that t*B0 = c."""
-        c0, c1 = point
-        [[a, b], [c, d]] = self.B0_fft
-        c0_fft, c1_fft = fft(c0), fft(c1)
-        t0_fft = [(c0_fft[i] * d[i] - c1_fft[i] * c[i]) / q for i in range(self.n)]
-        t1_fft = [(-c0_fft[i] * b[i] + c1_fft[i] * a[i]) / q for i in range(self.n)]
-        return t0_fft, t1_fft
-
     def hash_to_point(self, message, salt):
         """
         Hash a message to a point in Z[x] mod(Phi, q).
@@ -227,10 +205,11 @@ class SecretKey:
 
         k = (1 << 16) // q
         emessage = message.encode('utf-8')
+        # Create a SHAKE object and hash the salt and message.
         shake = SHAKE256.new()
         shake.update(salt)
         shake.update(emessage)
-        # digest = hash_instance.hexdigest(8 * n)
+        # Output pseudorandom bytes and map them to coefficients.
         hashed = [0 for i in range(n)]
         i = 0
         j = 0
@@ -238,7 +217,6 @@ class SecretKey:
             # Takes 2 bytes, transform them in a 16 bits integer
             twobytes = shake.read(2)
             elt = (twobytes[0] << 8) + twobytes[1]  # This breaks in Python 2.x
-            # elt = int(digest[4 * j: 4 * (j + 1)], 16)
             # Implicit rejection sampling
             if elt < k * q:
                 hashed[i] = elt % q
@@ -246,18 +224,34 @@ class SecretKey:
             j += 1
         return hashed
 
-    def sample_preimage_fft(self, point):
-        """Sample preimage."""
-        B = self.B0_fft
-        c = point, [0] * self.n
-        t_fft = self.get_coord_in_fft(c)
+    def sample_preimage(self, point):
+        """
+        Sample a short vector s such that s[0] + s[1] * h = point.
+        """
+        [[a, b], [c, d]] = self.B0_fft
+
+        # We compute a vector t_fft such that:
+        #     (fft(point), fft(0)) * B0_fft = t_fft
+        # Because fft(0) = 0 and the inverse of B has a very specific form,
+        # we can do several optimizations.
+        point_fft = fft(point)
+        t0_fft = [(point_fft[i] * d[i]) / q for i in range(self.n)]
+        t1_fft = [(-point_fft[i] * b[i]) / q for i in range(self.n)]
+        t_fft = [t0_fft, t1_fft]
+
+        # We now compute v such that:
+        #     v = z * B0 for an integral vector z
+        #     v is close to (point, 0)
         z_fft = ffsampling_fft(t_fft, self.T_fft, self.sigmin)
-        v0_fft = add_fft(mul_fft(z_fft[0], B[0][0]), mul_fft(z_fft[1], B[1][0]))
-        v1_fft = add_fft(mul_fft(z_fft[0], B[0][1]), mul_fft(z_fft[1], B[1][1]))
+        v0_fft = add_fft(mul_fft(z_fft[0], a), mul_fft(z_fft[1], c))
+        v1_fft = add_fft(mul_fft(z_fft[0], b), mul_fft(z_fft[1], d))
         v0 = [int(round(elt)) for elt in ifft(v0_fft)]
         v1 = [int(round(elt)) for elt in ifft(v1_fft)]
-        v = v0, v1
-        s = [sub(c[0], v[0]), sub(c[1], v[1])]
+
+        # The difference s = (point, 0) - v is such that:
+        #     s is short
+        #     s[0] + s[1] * h = point
+        s = [sub(point, v0), neg(v1)]
         return s
 
     def sign(self, message):
@@ -267,7 +261,7 @@ class SecretKey:
         # We repeat the signing procedure until we find a signature that is
         # short enough (both the Euclidean norm and the bytelength)
         while(1):
-            s = self.sample_preimage_fft(hashed)
+            s = self.sample_preimage(hashed)
             norm_sign = sum(coef ** 2 for coef in s[0])
             norm_sign += sum(coef ** 2 for coef in s[1])
             # Check the Euclidean norm
@@ -279,20 +273,27 @@ class SecretKey:
 
     def verify(self, message, signature):
         """Verify a signature."""
+        # Unpack the salt and the short polynomial s1
         salt = signature[:SALT_LEN]
         enc_s = signature[SALT_LEN:]
         s1 = decompress(enc_s, self.sig_bytelen - SALT_LEN, self.n)
+
         # Check that the encoding is valid
         if (s1 is False):
             print("Invalid encoding")
             return False
+
+        # Compute s0 and normalize its coefficients in (-q/2, q/2]
         hashed = self.hash_to_point(message, salt)
         s0 = sub_zq(hashed, mul_zq(s1, self.h))
         s0 = [(coef + (q >> 1)) % q - (q >> 1) for coef in s0]
-        # Check that the signature is short enough
+
+        # Check that the (s0, s1) is short
         norm_sign = sum(coef ** 2 for coef in s0)
         norm_sign += sum(coef ** 2 for coef in s1)
         if norm_sign > self.signature_bound:
             print("Squared norm of signature is too large:", norm_sign)
             return False
+
+        # If all checks are passed, accept
         return True

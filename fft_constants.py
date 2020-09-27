@@ -1,4 +1,7 @@
-"""This file contains constants related to the FFT (roots of cyclotomic polynomials).
+"""
+Constants (complex roots of cyclotomic polynomials) for the NTT.
+These were computed using scripts/generate_constants.sage.
+"""
 
 If this module is loaded with fft_short, we only need the first half of each phi*_roots table.
 """
@@ -11,6 +14,7 @@ phi4_roots = [1.00000000000000j, -1.00000000000000j]
 
 """ The roots of phi_8 = x^4 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi8_roots = [0.707106781186548 + 0.707106781186547j,
               -0.707106781186548 - 0.707106781186547j,
@@ -20,6 +24,7 @@ phi8_roots = [0.707106781186548 + 0.707106781186547j,
 
 """ The roots of phi_16 = x^8 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi16_roots = [0.923879532511287 + 0.382683432365090j,
                -0.923879532511287 - 0.382683432365090j,
@@ -33,6 +38,7 @@ phi16_roots = [0.923879532511287 + 0.382683432365090j,
 
 """ The roots of phi_32 = x^16 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi32_roots = [0.980785280403230 + 0.195090322016128j,
                -0.980785280403230 - 0.195090322016128j,
@@ -54,6 +60,7 @@ phi32_roots = [0.980785280403230 + 0.195090322016128j,
 
 """ The roots of phi_64 = x^32 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi64_roots = [0.995184726672197 + 0.0980171403295606j,
                -0.995184726672197 - 0.0980171403295606j,
@@ -91,6 +98,7 @@ phi64_roots = [0.995184726672197 + 0.0980171403295606j,
 
 """ The roots of phi_128 = x^64 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi128_roots = [0.998795456205172 + 0.0490676743274180j,
                 -0.998795456205172 - 0.0490676743274180j,
@@ -160,6 +168,7 @@ phi128_roots = [0.998795456205172 + 0.0490676743274180j,
 
 """ The roots of phi_256 = x^128 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi256_roots = [0.999698818696204 + 0.0245412285229123j,
                 -0.999698818696204 - 0.0245412285229123j,
@@ -293,6 +302,7 @@ phi256_roots = [0.999698818696204 + 0.0245412285229123j,
 
 """ The roots of phi_512 = x^256 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi512_roots = [0.999924701839145 + 0.0122715382857199j,
                 -0.999924701839145 - 0.0122715382857199j,
@@ -554,6 +564,7 @@ phi512_roots = [0.999924701839145 + 0.0122715382857199j,
 
 """ The roots of phi_1024 = x^512 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi1024_roots = [0.999981175282601 + 0.00613588464915448j,
                  -0.999981175282601 - 0.00613588464915448j,
@@ -1071,6 +1082,7 @@ phi1024_roots = [0.999981175282601 + 0.00613588464915448j,
 
 """ The roots of phi_2048 = x^1024 + 1
 The second half of the roots are is the conjugates of the first half.
+The root at index (2 * i + 1) is the negation of the root at index (2 * i).
 """
 phi2048_roots = [0.999995293809576 + 0.00306795676296598j,
                  -0.999995293809576 - 0.00306795676296598j,

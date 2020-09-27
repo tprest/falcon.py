@@ -1,4 +1,6 @@
-"""This file implements the section 3.8.2 of Falcon's documentation."""
+"""
+This file implements the section 3.8.2 of Falcon's documentation.
+"""
 from fft import fft, ifft, add_fft, mul_fft, adj_fft, div_fft
 from fft import add, mul, div, adj
 from ntt import ntt
@@ -116,7 +118,7 @@ def reduce(f, g, F, G):
     ga_fft = fft(g_adjust)
 
     while(1):
-        # Because we are working in finite precision to reduce very large polynomials,
+        # Because we work in finite precision to reduce very large polynomials,
         # we may need to perform the reduction several times.
         Size = max(53, bitsize(min(F)), bitsize(max(F)), bitsize(min(G)), bitsize(max(G)))
         if Size < size:
@@ -134,7 +136,12 @@ def reduce(f, g, F, G):
         k = [int(round(elt)) for elt in k]
         if all(elt == 0 for elt in k):
             break
-
+        # The two next lines are the costliest operations in ntru_gen
+        # (more than 75% of the total cost in dimension n = 1024).
+        # There are at least two ways to make them faster:
+        # - replace Karatsuba with Toom-Cook
+        # - mutualized Karatsuba, see ia.cr/2020/268
+        # For simplicity reasons, we didn't implement these optimisations here.
         fk = karamul(f, k)
         gk = karamul(g, k)
         for i in range(n):
@@ -195,6 +202,11 @@ def gs_norm(f, g, q):
 
 
 def gen_poly(n):
+    """
+    Generate a polynomial of degree at most (n - 1), with coefficients
+    following a discrete Gaussian distribution D_{Z, 0, sigma_fg} with
+    sigma_fg = 1.17 * sqrt(q / (2 * n)).
+    """
     # 1.17 * sqrt(12289 / 8192)
     sigma = 1.43300980528773
     assert(n < 4096)
@@ -202,6 +214,8 @@ def gen_poly(n):
     f = [0] * n
     k = 4096 // n
     for i in range(n):
+        # We use the fact that adding k Gaussian samples of std. dev. sigma
+        # gives a Gaussian sample of std. dev. sqrt(k) * sigma.
         f[i] = sum(f0[i * k + j] for j in range(k))
     return f
 
@@ -210,7 +224,7 @@ def ntru_gen(n):
     """
     Implement the algorithm 5 (NTRUGen) of Falcon's documentation.
     At the end of the function, polynomials f, g, F, G in Z[x]/(x ** n + 1)
-    are output, which verify f * G - g * F = 1 mod (x ** n + 1).
+    are output, which verify f * G - g * F = q mod (x ** n + 1).
     """
     while True:
         f = gen_poly(n)

@@ -39,7 +39,7 @@ def ldl(G):
 
     Format: coefficient
 
-    Corresponds to algorithm 8 (LDL) of Falcon's documentation,
+    Corresponds to algorithm 8 (LDL*) of Falcon's documentation,
     except it's in polynomial representation.
     """
     deg = len(G[0][0])
@@ -66,7 +66,7 @@ def ldl_fft(G):
 
     Format: FFT
 
-    Corresponds to algorithm 8 (LDL) of Falcon's documentation.
+    Corresponds to algorithm 8 (LDL*) of Falcon's documentation.
     """
     deg = len(G[0][0])
     dim = len(G)
@@ -191,6 +191,7 @@ def ffsampling_fft(t, T, sigmin):
         T: a ldl decomposition tree
 
     Format: FFT
+
     Corresponds to algorithm 11 (ffSampling) of Falcon's documentation.
     """
     n = len(t[0]) * fft_ratio
