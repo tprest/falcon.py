@@ -213,7 +213,7 @@ def test_samplerz_simple(n, iterations):
     return test_samplerz(10, 10, iterations // 100)
 
 
-def test(n, iterations=1000):
+def test(n, iterations=500):
     """A battery of tests."""
     wrapper_test(test_fft, "FFT", n, iterations)
     wrapper_test(test_ntt, "NTT", n, iterations)

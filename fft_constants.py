@@ -1,8 +1,6 @@
 """
 Constants (complex roots of cyclotomic polynomials) for the NTT.
 These were computed using scripts/generate_constants.sage.
-"""
-
 If this module is loaded with fft_short, we only need the first half of each phi*_roots table.
 """
 

@@ -32,7 +32,8 @@ def gram(B):
 
 
 def ldl(G):
-    """Compute the LDL decomposition of G.
+    """
+    Compute the LDL decomposition of G. Only works with 2 * 2 matrices.
 
     Args:
         G: a Gram matrix
@@ -44,22 +45,23 @@ def ldl(G):
     """
     deg = len(G[0][0])
     dim = len(G)
-    L = [[[0 for k in range(deg)] for j in range(dim)] for i in range(dim)]
-    D = [[[0 for k in range(deg)] for j in range(dim)] for i in range(dim)]
-    for i in range(dim):
-        L[i][i] = [1] + [0 for j in range(deg - 1)]
-        D[i][i] = G[i][i]
-        for j in range(i):
-            L[i][j] = G[i][j]
-            for k in range(j):
-                L[i][j] = sub(L[i][j], mul(mul(L[i][k], adj(L[j][k])), D[k][k]))
-            L[i][j] = div(L[i][j], D[j][j])
-            D[i][i] = sub(D[i][i], mul(mul(L[i][j], adj(L[i][j])), D[j][j]))
+    assert (dim == 2)
+    assert (dim == len(G[0]))
+
+    zero = [0] * deg
+    one = [1] + [0] * (deg - 1)
+    D00 = G[0][0][:]
+    L10 = div(G[1][0], G[0][0])
+    D11 = sub(G[1][1], mul(mul(L10, adj(L10)), G[0][0]))
+    L = [[one, zero], [L10, one]]
+    D = [[D00, zero], [zero, D11]]
+
     return [L, D]
 
 
 def ldl_fft(G):
-    """Compute the LDL decomposition of G.
+    """
+    Compute the LDL decomposition of G. Only works with 2 * 2 matrices.
 
     Args:
         G: a Gram matrix
@@ -70,17 +72,17 @@ def ldl_fft(G):
     """
     deg = len(G[0][0])
     dim = len(G)
-    L = [[[0 for k in range(deg)] for j in range(dim)] for i in range(dim)]
-    D = [[[0 for k in range(deg)] for j in range(dim)] for i in range(dim)]
-    for i in range(dim):
-        L[i][i] = [1 for j in range(deg)]
-        D[i][i] = G[i][i]
-        for j in range(i):
-            L[i][j] = G[i][j]
-            for k in range(j):
-                L[i][j] = sub_fft(L[i][j], mul_fft(mul_fft(L[i][k], adj_fft(L[j][k])), D[k][k]))
-            L[i][j] = div_fft(L[i][j], D[j][j])
-            D[i][i] = sub_fft(D[i][i], mul_fft(mul_fft(L[i][j], adj_fft(L[i][j])), D[j][j]))
+    assert (dim == 2)
+    assert (dim == len(G[0]))
+
+    zero = [0] * deg
+    one = [1] * deg
+    D00 = G[0][0][:]
+    L10 = div_fft(G[1][0], G[0][0])
+    D11 = sub_fft(G[1][1], mul_fft(mul_fft(L10, adj_fft(L10)), G[0][0]))
+    L = [[one, zero], [L10, one]]
+    D = [[D00, zero], [zero, D11]]
+
     return [L, D]
 
 
