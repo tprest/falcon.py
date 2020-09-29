@@ -1,5 +1,5 @@
 PY = python3
-AUX = *.pyc *.cprof
+AUX = *.pyc *.cprof */*.pyc
 
 test:
 	$(PY) test.py
@@ -13,5 +13,5 @@ profile:
 
 clean:
 	rm -f $(AUX)
-	rm -rf __pycache__
+	rm -rf __pycache__ */__pycache__
 	@echo "Clean done"

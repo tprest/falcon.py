@@ -69,12 +69,13 @@ C = [
     0x8000000000000000]
 
 
-def basesampler():
+def basesampler(source=randbits):
     """
     Sample z0 in {0, 1, ..., 18} with a distribution
     very close to the half-Gaussian D_{Z+, 0, MAX_SIGMA}.
+    Takes as (optional) input the randomness source (default: randbits).
     """
-    u = randbits(RCDT_PREC)
+    u = source(RCDT_PREC)
     z0 = 0
     for elt in RCDT:
         z0 += int(u < elt)
@@ -104,23 +105,24 @@ def approxexp(x, ccs):
     return y
 
 
-def berexp(x, ccs):
+def berexp(x, ccs, source=randbits):
     """
     Return a single bit, equal to 1 with probability ~ ccs * exp(-x).
     Both inputs x and ccs MUST be positive.
+    Also takes as (optional) input the randomness source (default: randbits).
     """
     s = int(x * ILN2)
     r = x - s * LN2
     s = min(s, 63)
     z = (approxexp(r, ccs) - 1) >> s
     for i in range(56, -8, -8):
-        w = randbits(8) - ((z >> i) & 0xFF)
+        w = source(8) - ((z >> i) & 0xFF)
         if w:
             break
     return (w < 0)
 
 
-def samplerz(mu, sigma, sigmin):
+def samplerz(mu, sigma, sigmin, source=randbits):
     """
     Given floating-point values mu, sigma (and sigmin),
     output an integer z according to the discrete
@@ -130,6 +132,7 @@ def samplerz(mu, sigma, sigmin):
     - the center mu
     - the standard deviation sigma
     - a scaling factor sigmin
+    - optional: the randomness source (default: randbits)
     The inputs MUST verify 1 < sigmin < sigma < MAX_SIGMA.
 
     Output:
@@ -144,12 +147,12 @@ def samplerz(mu, sigma, sigmin):
     ccs = sigmin / sigma
     while(1):
         # Sampler z0 from a Half-Gaussian
-        z0 = basesampler()
+        z0 = basesampler(source=source)
         # Convert z0 into a pseudo-Gaussian sample z
-        b = randbits(8) & 1
+        b = source(8) & 1
         z = b + (2 * b - 1) * z0
         # Rejection sampling to obtain a true Gaussian sample
         x = ((z - r) ** 2) * dss
         x -= (z0 ** 2) * INV_2SIGMA2
-        if berexp(x, ccs):
+        if berexp(x, ccs, source=source):
             return z + s

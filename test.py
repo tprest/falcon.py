@@ -16,6 +16,8 @@ from ntrugen import karamul, ntru_gen, gs_norm
 from falcon import SecretKey, PublicKey, Params, SALT_LEN
 from encoding import compress, decompress
 from scripts import saga
+from scripts.samplerz_KAT512 import KAT512
+from scripts.samplerz_KAT1024 import KAT1024
 # https://stackoverflow.com/a/25823885/4143624
 from timeit import default_timer as timer
 import sys
@@ -178,6 +180,37 @@ def test_samplerz(nb_mu=100, nb_sig=100, nb_samp=1000):
         return True
 
 
+def KAT_randbits(k):
+    """
+    Use a fixed bytestring 'octets' as a source of random bits
+    """
+    global octets
+    assert (k % 8 == 0)
+    oc = octets[: (k // 4)]
+    octets = octets[(k // 4):]
+    return int(oc, 16)
+
+
+def test_samplerz_KAT():
+    # octets is a global variable used as samplerz's randomness.
+    # It is set to many fixed values by test_samplerz_KAT,
+    # then used as a randomness source via KAT_randbits.
+    global octets
+    for D in KAT512 + KAT1024:
+        mu = D["mu"]
+        sigma = D["sigma"]
+        sigmin = D["sigmin"]
+        # Hard copy. octets is the randomness source for samplez
+        octets = D["octets"][:]
+        exp_z = D["z"]
+        z = samplerz(mu, sigma, sigmin, source=KAT_randbits)
+        # print(exp_z, z)
+        if (exp_z != z):
+            print("SamplerZ does not match KATs")
+            return False
+    return True
+
+
 def test_signature(n, iterations=10):
     """Test Falcon."""
     sk = SecretKey(n)
@@ -231,6 +264,8 @@ def test(n, iterations=500):
 
 # Run all the tests
 if (__name__ == "__main__"):
+    rep = test_samplerz_KAT()
+    print("KAT for SamplerZ    : " + ("OK" if rep else "Not OK") + "\n")
     for i in range(7, 11):
         n = (1 << i)
         it = 1000
