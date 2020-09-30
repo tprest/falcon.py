@@ -187,6 +187,8 @@ def KAT_randbits(k):
     global octets
     assert (k % 8 == 0)
     oc = octets[: (k // 4)]
+    if len(oc) != (k // 4):
+        raise IndexError("Randomness string out of bounds")
     octets = octets[(k // 4):]
     return int(oc, 16)
 
@@ -203,7 +205,10 @@ def test_samplerz_KAT():
         # Hard copy. octets is the randomness source for samplez
         octets = D["octets"][:]
         exp_z = D["z"]
-        z = samplerz(mu, sigma, sigmin, source=KAT_randbits)
+        try:
+            z = samplerz(mu, sigma, sigmin, source=KAT_randbits)
+        except IndexError:
+            return False
         # print(exp_z, z)
         if (exp_z != z):
             print("SamplerZ does not match KATs")
@@ -216,7 +221,7 @@ def test_signature(n, iterations=10):
     sk = SecretKey(n)
     pk = PublicKey(sk)
     for i in range(iterations):
-        message = "0"
+        message = b"abc"
         sig = sk.sign(message)
         if pk.verify(message, sig) is False:
             return False

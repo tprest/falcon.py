@@ -1,6 +1,10 @@
 """
 Compression and decompression routines for signatures.
 """
+import sys
+# For debugging purposes
+if sys.version_info >= (3, 4):
+    from importlib import reload  # Python 3.4+ only.
 
 
 def compress(v, slen):
@@ -17,9 +21,9 @@ def compress(v, slen):
     u = ""
     for coef in v:
         # Encode the sign
-        s = "1" if coef > 0 else "0"
+        s = "1" if coef < 0 else "0"
         # Encode the low bits
-        s += format((abs(coef) % (1 << 7)), '#09b')[:1:-1]
+        s += format((abs(coef) % (1 << 7)), '#09b')[2:]
         # Encode the high bits
         s += "0" * (abs(coef) >> 7) + "1"
         u += s
@@ -54,9 +58,9 @@ def decompress(x, slen, n):
     try:
         while (u != "") and (len(v) < n):
             # Recover the sign of coef
-            sign = 1 if u[0] == "1" else -1
+            sign = -1 if u[0] == "1" else 1
             # Recover the 7 low bits of abs(coef)
-            low = int(u[7:0:-1], 2)
+            low = int(u[1:8], 2)
             i, high = 8, 0
             # Recover the high bits of abs(coef)
             while (u[i] == "0"):
@@ -65,7 +69,7 @@ def decompress(x, slen, n):
             # Compute coef
             coef = sign * (low + (high << 7))
             # Enforce a unique encoding for coef = 0
-            if (coef == 0) and (sign == 1):
+            if (coef == 0) and (sign == -1):
                 return False
             # Store intermediate results
             v += [coef]

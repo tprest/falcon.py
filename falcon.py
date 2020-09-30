@@ -204,11 +204,11 @@ class SecretKey:
             raise ValueError("The modulus is too large")
 
         k = (1 << 16) // q
-        emessage = message.encode('utf-8')
+        # emessage = message.encode('utf-8')
         # Create a SHAKE object and hash the salt and message.
         shake = SHAKE256.new()
         shake.update(salt)
-        shake.update(emessage)
+        shake.update(message)
         # Output pseudorandom bytes and map them to coefficients.
         hashed = [0 for i in range(n)]
         i = 0
@@ -255,7 +255,9 @@ class SecretKey:
         return s
 
     def sign(self, message):
-        """Sign a message."""
+        """
+        Sign a message. The message MUST be a byte string or byte array.
+        """
         salt = randombytes(SALT_LEN)
         hashed = self.hash_to_point(message, salt)
         # We repeat the signing procedure until we find a signature that is
