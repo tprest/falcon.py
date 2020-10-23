@@ -1,10 +1,6 @@
 """
 Compression and decompression routines for signatures.
 """
-import sys
-# For debugging purposes
-if sys.version_info >= (3, 4):
-    from importlib import reload  # Python 3.4+ only.
 
 
 def compress(v, slen):

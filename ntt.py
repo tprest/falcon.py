@@ -7,8 +7,8 @@ The NTT implemented here is for polynomials in Z_q[x]/(phi), with:
 The code is voluntarily very similar to the code of the FFT.
 It is probably possible to use templating to merge both implementations.
 """
-from common import split, merge, q                        # Import split and merge
-from ntt_constants import roots_dict_Zq, inv_mod_q        # Import constants useful for the FFT
+from common import split, merge, q                     # Import split and merge
+from ntt_constants import roots_dict_Zq, inv_mod_q     # Import constants useful for the FFT
 
 
 """i2 is the inverse of 2 mod q."""

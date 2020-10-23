@@ -5,14 +5,15 @@ Falcon stands for **FA**st Fourier **L**attice-based **CO**mpact signatures over
 
 ## Content
 
-This repository contains the following files (in order of dependency):
+This repository contains the following files (roughly in order of dependency):
 
 1. [`common.py`](common.py) contains shared functions and constants
-1. [`samplerz.py`](samplerz.py) implements a Gaussian sampler over the integers
+1. [`rng.py`](rng.py) implements a ChaCha20-based PRNG, useful for KATs (standalone)
+1. [`samplerz.py`](samplerz.py) implements a Gaussian sampler over the integers (standalone)
 1. [`fft_constants.py`](fft_constants.py) contains precomputed constants used in the FFT
 1. [`ntt_constants.py`](ntt_constants.py) contains precomputed constants used in the NTT
-1. [`fft.py`](fft.py) contains a stand-alone implementation of the FFT over R[x] / (x<sup>n</sup> + 1)
-1. [`ntt.py`](ntt.py) contains a stand-alone implementation of the NTT over Z<sub>q</sub>[x] / (x<sup>n</sup> + 1)
+1. [`fft.py`](fft.py) implements the FFT over R[x] / (x<sup>n</sup> + 1)
+1. [`ntt.py`](ntt.py) implements the NTT over Z<sub>q</sub>[x] / (x<sup>n</sup> + 1)
 1. [`ntrugen.py`](ntrugen.py) generate polynomials f,g,F,G in Z[x] / (x<sup>n</sup> + 1) such that f G - g F = q
 1. [`ffsampling.py`](ffsampling.py) implements the fast Fourier sampling algorithm
 1. [`falcon.py`](falcon.py) implements Falcon

@@ -2,7 +2,6 @@
 Python implementation of Falcon:
 https://falcon-sign.info/.
 """
-
 from common import q
 from numpy import set_printoptions
 from math import sqrt
@@ -13,13 +12,14 @@ from ntrugen import ntru_gen
 from encoding import compress, decompress
 # https://pycryptodome.readthedocs.io/en/latest/src/hash/shake256.html
 from Crypto.Hash import SHAKE256
-import sys
-# For debugging purposes
-if sys.version_info >= (3, 4):
-    from importlib import reload  # Python 3.4+ only.
 # Randomness
 from os import urandom
 from rng import ChaCha20
+# For debugging purposes
+import sys
+if sys.version_info >= (3, 4):
+    from importlib import reload  # Python 3.4+ only.
+
 
 set_printoptions(linewidth=200, precision=5, suppress=True)
 

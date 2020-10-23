@@ -31,20 +31,3 @@ phi1024_roots_Zq = sum([[sqrt(elt), - sqrt(elt)] for elt in phi512_roots_Zq], []
 phi2048_roots_Zq = sum([[sqrt(elt), - sqrt(elt)] for elt in phi1024_roots_Zq], [])
 
 
-RRR = RealField(256)
-
-
-"""Generate precomputed constants for the Gaussian sampler over Z."""
-def gaussian(sigma, mu, x):
-	return exp(- (RRR(x) - RRR(mu)) ** 2 / (2 * (RRR(sigma) ** 2)))
-
-
-def half_gaussian_table(sigma):
-	normalization_factor = sum(gaussian(sigma, 0, i) for i in range(10 * sigma))
-	table = []
-	for i in range(10 * sigma):
-		u = sum(gaussian(sigma, 0, j) for j in range(i + 1)) / normalization_factor
-		high_u = '0x%016x' % floor(u * (1 << 64))
-		low_u = '0x%016x' % (floor(u * (1 << 128)) & ((1 << 64) - 1))
-		table += [u]
-	return table
