@@ -185,7 +185,7 @@ def ffnp_fft(t, T):
         return z
 
 
-def ffsampling_fft(t, T, sigmin):
+def ffsampling_fft(t, T, sigmin, randombytes):
     """Compute the ffsampling of t, using T as auxilary information.
 
     Args:
@@ -200,11 +200,11 @@ def ffsampling_fft(t, T, sigmin):
     z = [0, 0]
     if (n > 1):
         l10, T0, T1 = T
-        z[1] = merge_fft(ffsampling_fft(split_fft(t[1]), T1, sigmin))
+        z[1] = merge_fft(ffsampling_fft(split_fft(t[1]), T1, sigmin, randombytes))
         t0b = add_fft(t[0], mul_fft(sub_fft(t[1], z[1]), l10))
-        z[0] = merge_fft(ffsampling_fft(split_fft(t0b), T0, sigmin))
+        z[0] = merge_fft(ffsampling_fft(split_fft(t0b), T0, sigmin, randombytes))
         return z
     elif (n == 1):
-        z[0] = [samplerz(t[0][0].real, T[0], sigmin)]
-        z[1] = [samplerz(t[1][0].real, T[0], sigmin)]
+        z[0] = [samplerz(t[0][0].real, T[0], sigmin, randombytes)]
+        z[1] = [samplerz(t[1][0].real, T[0], sigmin, randombytes)]
         return z

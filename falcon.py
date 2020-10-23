@@ -18,16 +18,29 @@ import sys
 if sys.version_info >= (3, 4):
     from importlib import reload  # Python 3.4+ only.
 # Randomness
-if sys.version_info < (3, 6):
-    from os import urandom as randombytes
-else:
-    from secrets import token_bytes as randombytes
+from os import urandom
+from rng import ChaCha20
 
 set_printoptions(linewidth=200, precision=5, suppress=True)
 
+logn = {
+    2: 1,
+    4: 2,
+    8: 3,
+    16: 4,
+    32: 5,
+    64: 6,
+    128: 7,
+    256: 8,
+    512: 9,
+    1024: 10
+}
 
-# Bytelength of the signing salt
+
+# Bytelength of the signing salt and header
+HEAD_LEN = 1
 SALT_LEN = 40
+SEED_LEN = 56
 
 
 # Parameter sets for Falcon:
@@ -37,13 +50,61 @@ SALT_LEN = 40
 # - sigbound is the upper bound on ||s0||^2 + ||s1||^2
 # - sig_bytelen is the bytelength of signatures
 Params = {
+    # FalconParam(2, 2)
+    2: {
+        "n": 2,
+        "sigma": 144.81253976308423,
+        "sigmin": 1.1165085072329104,
+        "sig_bound": 101498,
+        "sig_bytelen": 44,
+    },
+    # FalconParam(4, 2)
+    4: {
+        "n": 4,
+        "sigma": 146.83798833523608,
+        "sigmin": 1.1321247692325274,
+        "sig_bound": 208714,
+        "sig_bytelen": 47,
+    },
+    # FalconParam(8, 2)
+    8: {
+        "n": 8,
+        "sigma": 148.83587593064718,
+        "sigmin": 1.147528535373367,
+        "sig_bound": 428865,
+        "sig_bytelen": 52,
+    },
+    # FalconParam(16, 4)
+    16: {
+        "n": 16,
+        "sigma": 151.78340713845503,
+        "sigmin": 1.170254078853483,
+        "sig_bound": 892039,
+        "sig_bytelen": 63,
+    },
+    # FalconParam(32, 8)
+    32: {
+        "n": 32,
+        "sigma": 154.6747794602761,
+        "sigmin": 1.1925466358390344,
+        "sig_bound": 1852696,
+        "sig_bytelen": 82,
+    },
+    # FalconParam(64, 16)
+    64: {
+        "n": 64,
+        "sigma": 157.51308555044122,
+        "sigmin": 1.2144300507766141,
+        "sig_bound": 3842630,
+        "sig_bytelen": 122,
+    },
     # FalconParam(128, 32)
     128: {
         "n": 128,
         "sigma": 160.30114421975344,
         "sigmin": 1.235926056771981,
         "sig_bound": 7959734,
-        "sig_bytelen": 196,
+        "sig_bytelen": 200,
     },
     # FalconParam(256, 64)
     256: {
@@ -51,7 +112,7 @@ Params = {
         "sigma": 163.04153322607107,
         "sigmin": 1.2570545284063217,
         "sig_bound": 16468416,
-        "sig_bytelen": 350,
+        "sig_bytelen": 356,
     },
     # FalconParam(512, 128)
     512: {
@@ -155,7 +216,7 @@ class SecretKey:
     - verify the signature of a message
     """
 
-    def __init__(self, n):
+    def __init__(self, n, polys=None):
         """Initialize a secret key."""
         # Public parameters
         self.n = n
@@ -165,7 +226,15 @@ class SecretKey:
         self.sig_bytelen = Params[n]["sig_bytelen"]
 
         # Compute NTRU polynomials f, g, F, G verifying fG - gF = q mod Phi
-        self.f, self.g, self.F, self.G = ntru_gen(n)
+        if polys is None:
+            self.f, self.g, self.F, self.G = ntru_gen(n)
+        else:
+            [f, g, F, G] = polys
+            assert all((len(poly) == n) for poly in [f, g, F, G])
+            self.f = f[:]
+            self.g = g[:]
+            self.F = F[:]
+            self.G = G[:]
 
         # From f, g, F, G, compute the basis B0 of a NTRU lattice
         # as well as its Gram matrix and their fft's.
@@ -204,7 +273,6 @@ class SecretKey:
             raise ValueError("The modulus is too large")
 
         k = (1 << 16) // q
-        # emessage = message.encode('utf-8')
         # Create a SHAKE object and hash the salt and message.
         shake = SHAKE256.new()
         shake.update(salt)
@@ -224,7 +292,7 @@ class SecretKey:
             j += 1
         return hashed
 
-    def sample_preimage(self, point):
+    def sample_preimage(self, point, seed=None):
         """
         Sample a short vector s such that s[0] + s[1] * h = point.
         """
@@ -242,7 +310,16 @@ class SecretKey:
         # We now compute v such that:
         #     v = z * B0 for an integral vector z
         #     v is close to (point, 0)
-        z_fft = ffsampling_fft(t_fft, self.T_fft, self.sigmin)
+        if seed is None:
+            # If no seed is defined, use urandom as the pseudo-random source.
+            z_fft = ffsampling_fft(t_fft, self.T_fft, self.sigmin, urandom)
+        else:
+            # If a seed is defined, initialize a ChaCha20 PRG
+            # that is used to generate pseudo-randomness.
+            chacha_prng = ChaCha20(seed)
+            z_fft = ffsampling_fft(t_fft, self.T_fft, self.sigmin,
+                                   chacha_prng.randombytes)
+
         v0_fft = add_fft(mul_fft(z_fft[0], a), mul_fft(z_fft[1], c))
         v1_fft = add_fft(mul_fft(z_fft[0], b), mul_fft(z_fft[1], d))
         v0 = [int(round(elt)) for elt in ifft(v0_fft)]
@@ -254,31 +331,43 @@ class SecretKey:
         s = [sub(point, v0), neg(v1)]
         return s
 
-    def sign(self, message):
+    def sign(self, message, randombytes=urandom):
         """
         Sign a message. The message MUST be a byte string or byte array.
+        Optionally, one can select the source of (pseudo-)randomness used
+        (default: urandom).
         """
+        int_header = 0x30 + logn[self.n]
+        header = int_header.to_bytes(1, "little")
+
         salt = randombytes(SALT_LEN)
         hashed = self.hash_to_point(message, salt)
+
         # We repeat the signing procedure until we find a signature that is
         # short enough (both the Euclidean norm and the bytelength)
         while(1):
-            s = self.sample_preimage(hashed)
+            if (randombytes == urandom):
+                s = self.sample_preimage(hashed)
+            else:
+                seed = randombytes(SEED_LEN)
+                s = self.sample_preimage(hashed, seed=seed)
             norm_sign = sum(coef ** 2 for coef in s[0])
             norm_sign += sum(coef ** 2 for coef in s[1])
             # Check the Euclidean norm
-            if norm_sign < self.signature_bound:
-                enc_s = compress(s[1], self.sig_bytelen - SALT_LEN)
+            if norm_sign <= self.signature_bound:
+                enc_s = compress(s[1], self.sig_bytelen - HEAD_LEN - SALT_LEN)
                 # Check that the encoding is valid (sometimes it fails)
                 if (enc_s is not False):
-                    return salt + enc_s
+                    return header + salt + enc_s
 
     def verify(self, message, signature):
-        """Verify a signature."""
+        """
+        Verify a signature.
+        """
         # Unpack the salt and the short polynomial s1
-        salt = signature[:SALT_LEN]
-        enc_s = signature[SALT_LEN:]
-        s1 = decompress(enc_s, self.sig_bytelen - SALT_LEN, self.n)
+        salt = signature[HEAD_LEN:HEAD_LEN + SALT_LEN]
+        enc_s = signature[HEAD_LEN + SALT_LEN:]
+        s1 = decompress(enc_s, self.sig_bytelen - HEAD_LEN - SALT_LEN, self.n)
 
         # Check that the encoding is valid
         if (s1 is False):
