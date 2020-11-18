@@ -196,7 +196,7 @@ class PublicKey:
     def __repr__(self):
         """Print the object in readable form."""
         rep = "Public for n = {n}:\n\n".format(n=self.n)
-        rep += "h = {h}\n".format(h=self.f)
+        rep += "h = {h}\n".format(h=self.h)
         return rep
 
 
