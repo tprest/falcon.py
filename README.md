@@ -56,6 +56,42 @@ b'9\xe8%\xdf\xbb\xa2\x06TcH\xa6\x93\xb9q>\xe2\xec\x99\xf7\xc4\xe5>\xe8\x1dz\x9fX
 True
 ```
 
+Another example for real case:
+
+```python
+# file: sender.py
+from falcon.falcon import SecretKey
+
+N = 512
+# f & g polynomial can be static
+# len(f) == len(g) == N
+f = [...(512 items)...]
+g = [...(512 items)...]
+
+# SFPK: Sender Falcon Public Key
+# SFSK: Sender Falcon Secret Key
+SFSK = SecretKey(N, f, g)
+SFPK = SFSK.h # SFPK should be sent to receiver
+
+sig = SFSK.sign(b'byte_message')
+
+# after sign, send `sig` & `byte_message` to receiver.py
+```
+
+```python
+# file: receiver.py
+from falcon.falcon import PublicKey
+N = 512
+
+# received `sig` & `byte_message`, need to valid the message
+
+# SFPK: Sender Falcon Public Key
+SFPK = PublicKey(N, SFPK)
+SFPK.verify(b'byte_message', sig)
+```
+
+
+
 Upon first use, consider running `make test` to make sure that the code runs properly on your machine. You should obtain (the test battery for `n = 1024` may take a few minutes):
 
 ```
