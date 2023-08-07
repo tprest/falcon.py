@@ -19,7 +19,7 @@ phi2048_roots = sum([[sqrt(elt), - sqrt(elt)] for elt in phi1024_roots], [])
 	for q = 12 * 1024 + 1 and n = 4, 8, 16, ..., 1024."""
 q = 12 * 1024 + 1
 Zq = Integers(q)
-phi4_roots_Zq = [sqrt(R(- 1)), - sqrt(R(- 1))]
+phi4_roots_Zq = [sqrt(Zq(- 1)), - sqrt(Zq(- 1))]
 phi8_roots_Zq = sum([[sqrt(elt), - sqrt(elt)] for elt in phi4_roots_Zq], [])
 phi16_roots_Zq = sum([[sqrt(elt), - sqrt(elt)] for elt in phi8_roots_Zq], [])
 phi32_roots_Zq = sum([[sqrt(elt), - sqrt(elt)] for elt in phi16_roots_Zq], [])
