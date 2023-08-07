@@ -93,7 +93,7 @@ def intt(f_ntt):
     elif (n == 2):
         f = [0] * n
         f[0] = (i2 * (f_ntt[0] + f_ntt[1])) % q
-        f[1] = (i2 * inv_mod_q[1479] * (f_ntt[0] - f_ntt[1])) % q
+        f[1] = (i2 * inv_mod_q[sqr1] * (f_ntt[0] - f_ntt[1])) % q
     return f
 
 
