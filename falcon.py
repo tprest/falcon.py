@@ -280,7 +280,6 @@ class SecretKey:
         # Output pseudorandom bytes and map them to coefficients.
         hashed = [0 for i in range(n)]
         i = 0
-        j = 0
         while i < n:
             # Takes 2 bytes, transform them in a 16 bits integer
             twobytes = shake.read(2)
@@ -289,7 +288,6 @@ class SecretKey:
             if elt < k * q:
                 hashed[i] = elt % q
                 i += 1
-            j += 1
         return hashed
 
     def sample_preimage(self, point, seed=None):
@@ -345,7 +343,7 @@ class SecretKey:
 
         # We repeat the signing procedure until we find a signature that is
         # short enough (both the Euclidean norm and the bytelength)
-        while(1):
+        while (1):
             if (randombytes == urandom):
                 s = self.sample_preimage(hashed)
             else:
