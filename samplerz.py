@@ -4,7 +4,12 @@ from math import floor
 # Use high-quality randomness
 # The "secrets" library could also work (Python >= 3.6)
 from os import urandom
+import random
 
+random.seed(urandom(64))
+
+def getRandomBytes(k):
+    return int.to_bytes(random.getrandbits(k*8), length=k*8, byteorder="little")
 
 # Upper bound on all the values of sigma
 MAX_SIGMA = 1.8205
@@ -62,7 +67,7 @@ C = [
     0x8000000000000000]
 
 
-def basesampler(randombytes=urandom):
+def basesampler(randombytes=getRandomBytes):
     """
     Sample z0 in {0, 1, ..., 18} with a distribution
     very close to the half-Gaussian D_{Z+, 0, MAX_SIGMA}.
@@ -99,7 +104,7 @@ def approxexp(x, ccs):
     return y
 
 
-def berexp(x, ccs, randombytes=urandom):
+def berexp(x, ccs, randombytes=getRandomBytes):
     """
     Return a single bit, equal to 1 with probability ~ ccs * exp(-x).
     Both inputs x and ccs MUST be positive.
@@ -117,7 +122,7 @@ def berexp(x, ccs, randombytes=urandom):
     return (w < 0)
 
 
-def samplerz(mu, sigma, sigmin, randombytes=urandom):
+def samplerz(mu, sigma, sigmin, randombytes=getRandomBytes):
     """
     Given floating-point values mu, sigma (and sigmin),
     output an integer z according to the discrete
