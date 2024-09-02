@@ -18,7 +18,7 @@ This repository contains the following files (roughly in order of dependency):
 1. [`ffsampling.py`](ffsampling.py) implements the fast Fourier sampling algorithm
 1. [`falcon.py`](falcon.py) implements Falcon (WITHOUT MNEMONICS)
 1. [`test.py`](test.py) implements tests to check that everything is properly implemented
-1. [`main.py`](main.py) supports mnemonic creation and recovery
+1. [`mnemonic.py`](mnemonic.py) supports mnemonic creation and recovery
 
 
 ## How to use
