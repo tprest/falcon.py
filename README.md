@@ -16,8 +16,9 @@ This repository contains the following files (roughly in order of dependency):
 1. [`ntt.py`](ntt.py) implements the NTT over Z<sub>q</sub>[x] / (x<sup>n</sup> + 1)
 1. [`ntrugen.py`](ntrugen.py) generate polynomials f,g,F,G in Z[x] / (x<sup>n</sup> + 1) such that f G - g F = q
 1. [`ffsampling.py`](ffsampling.py) implements the fast Fourier sampling algorithm
-1. [`falcon.py`](falcon.py) implements Falcon
+1. [`falcon.py`](falcon.py) implements Falcon (WITHOUT MNEMONICS)
 1. [`test.py`](test.py) implements tests to check that everything is properly implemented
+1. [`main.py`](main.py) supports mnemonic creation and recovery
 
 
 ## How to use
@@ -29,11 +30,17 @@ This repository contains the following files (roughly in order of dependency):
    - To sign a message m with a pre-chosen 40-byte salt: `sig = sk.sign(m, salt)`
    Note that the message MUST be a byte array or byte string.
 1. We can also verify signatures: `pk.verify(m, sig)`
+1. We can also create mneonics: `createMnemonicAndKey(n)`
+1. And recover the keys from mnemonics: `getSecretFromMnemonic(mnemonic)`
 
 Example in Python 3.6.9:
 
 ```
 >>> import falcon
+>>> import mnemonic
+>>> sk, mn = createMnemonicAndKey()
+>>> mn
+['art2', 'bit0', 'note1', 'punishment2', 'love0', 'lead2', 'rule0', 'representative2', 'father0', 'connection0', 'daughter1', 'answer1', 'iron0', 'rhythm2', 'business1', 'place1', 'amusement2', 'measure2', 'sound1', 'morning0', 'judge1', 'belief0', 'advertisement1', 'business0', 'opinion0', 'distance0']
 >>> sk = falcon.SecretKey(512)
 >>> pk = falcon.PublicKey(sk)
 >>> sk
