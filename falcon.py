@@ -8,7 +8,7 @@ from math import sqrt
 from fft import fft, ifft, sub, neg, add_fft, mul_fft
 from ntt import sub_zq, mul_zq, div_zq
 from ffsampling import gram, ffldl_fft, ffsampling_fft
-from ntrugen import ntru_gen
+from ntrugen import ntru_solve
 from encoding import compress, decompress
 # https://pycryptodome.readthedocs.io/en/latest/src/hash/shake256.html
 from Crypto.Hash import SHAKE256
@@ -134,6 +134,7 @@ Params = {
 
 
 def print_tree(tree, pref=""):
+    # print(f"print_tree tree : {tree}")
     """
     Display a LDL tree in a readable form.
 
@@ -165,11 +166,9 @@ def print_tree(tree, pref=""):
 def normalize_tree(tree, sigma):
     """
     Normalize leaves of a LDL tree (from values ||b_i||**2 to sigma/||b_i||).
-
     Args:
         T: a LDL tree
         sigma: a standard deviation
-
     Format: coefficient or fft
     """
     if len(tree) == 3:
@@ -180,61 +179,18 @@ def normalize_tree(tree, sigma):
         tree[1] = 0
 
 
-class PublicKey:
-    """
-    This class contains methods for performing public key operations in Falcon.
-    """
-
-    def __init__(self, sk):
-        """Initialize a public key."""
-        self.n = sk.n
-        self.h = sk.h
-        self.hash_to_point = sk.hash_to_point
-        self.signature_bound = sk.signature_bound
-        self.verify = sk.verify
-
-    def __repr__(self):
-        """Print the object in readable form."""
-        rep = "Public for n = {n}:\n\n".format(n=self.n)
-        rep += "h = {h}\n".format(h=self.h)
-        return rep
-
-
 class SecretKey:
-    """
-    This class contains methods for performing
-    secret key operations (and also public key operations) in Falcon.
-
-    One can:
-    - initialize a secret key for:
-        - n = 128, 256, 512, 1024,
-        - phi = x ** n + 1,
-        - q = 12 * 1024 + 1
-    - find a preimage t of a point c (both in ( Z[x] mod (Phi,q) )**2 ) such that t*B0 = c
-    - hash a message to a point of Z[x] mod (Phi,q)
-    - sign a message
-    - verify the signature of a message
-    """
-
-    def __init__(self, n, polys=None):
-        """Initialize a secret key."""
-        # Public parameters
+    def __init__(self, n, f, g, polys=None):
         self.n = n
         self.sigma = Params[n]["sigma"]
         self.sigmin = Params[n]["sigmin"]
         self.signature_bound = Params[n]["sig_bound"]
         self.sig_bytelen = Params[n]["sig_bytelen"]
 
-        # Compute NTRU polynomials f, g, F, G verifying fG - gF = q mod Phi
-        if polys is None:
-            self.f, self.g, self.F, self.G = ntru_gen(n)
-        else:
-            [f, g, F, G] = polys
-            assert all((len(poly) == n) for poly in [f, g, F, G])
-            self.f = f[:]
-            self.g = g[:]
-            self.F = F[:]
-            self.G = G[:]
+        self.f = f
+        self.g = g
+
+        self.F, self.G = self.genFG(f, g)
 
         # From f, g, F, G, compute the basis B0 of a NTRU lattice
         # as well as its Gram matrix and their fft's.
@@ -251,17 +207,22 @@ class SecretKey:
         # The public key is a polynomial such that h*f = g mod (Phi,q)
         self.h = div_zq(self.g, self.f)
 
-    def __repr__(self, verbose=False):
-        """Print the object in readable form."""
-        rep = "Private key for n = {n}:\n\n".format(n=self.n)
-        rep += "f = {f}\n".format(f=self.f)
-        rep += "g = {g}\n".format(g=self.g)
-        rep += "F = {F}\n".format(F=self.F)
-        rep += "G = {G}\n".format(G=self.G)
-        if verbose:
-            rep += "\nFFT tree\n"
-            rep += print_tree(self.T_fft, pref="")
-        return rep
+
+    def genFG(self, f, g):
+        """
+        Generate F, G by `ntru_solve` function declare in ntrugen,
+        for static f, g poly parameters
+        Args:
+            f: a list with length N for Secret Key polynomial
+            g: a list with length N for Secret Key polynomial
+        """
+        if len(f) != self.n or len(g) != self.n:
+            raise ValueError("The length of f, g should be same with N")
+
+        F, G = ntru_solve(f, g)
+        F = [int(coef) for coef in F]
+        G = [int(coef) for coef in G]
+        return F, G
 
     def hash_to_point(self, message, salt):
         """
@@ -357,6 +318,43 @@ class SecretKey:
                 # Check that the encoding is valid (sometimes it fails)
                 if (enc_s is not False):
                     return header + salt + enc_s
+
+
+class PublicKey:
+    def __init__(self, n, FPK):
+        self.n = n
+        self.h = FPK
+        self.signature_bound = Params[n]["sig_bound"]
+        self.sig_bytelen = Params[n]["sig_bytelen"]
+
+    def hash_to_point(self, message, salt):
+        """
+        Hash a message to a point in Z[x] mod(Phi, q).
+        Inspired by the Parse function from NewHope.
+        """
+        n = self.n
+        if q > (1 << 16):
+            raise ValueError("The modulus is too large")
+
+        k = (1 << 16) // q
+        # Create a SHAKE object and hash the salt and message.
+        shake = SHAKE256.new()
+        shake.update(salt)
+        shake.update(message)
+        # Output pseudorandom bytes and map them to coefficients.
+        hashed = [0 for i in range(n)]
+        i = 0
+        j = 0
+        while i < n:
+            # Takes 2 bytes, transform them in a 16 bits integer
+            twobytes = shake.read(2)
+            elt = (twobytes[0] << 8) + twobytes[1]  # This breaks in Python 2.x
+            # Implicit rejection sampling
+            if elt < k * q:
+                hashed[i] = elt % q
+                i += 1
+            j += 1
+        return hashed
 
     def verify(self, message, signature):
         """
