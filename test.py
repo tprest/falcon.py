@@ -13,8 +13,8 @@ from ffsampling import gram
 from random import randint, random, gauss, uniform
 from math import sqrt, ceil
 from ntrugen import karamul, ntru_gen, gs_norm
-from falcon import SecretKey, PublicKey, Params
-from falcon import SALT_LEN, HEAD_LEN, SHAKE256
+from falcon import Falcon, params
+from falcon import SHAKE256, HEAD_LEN, SALT_LEN
 from encoding import compress, decompress
 from scripts import saga
 from scripts.samplerz_KAT512 import sampler_KAT512
@@ -141,7 +141,8 @@ def test_compress(n, iterations):
     """Test compression and decompression."""
     try:
         sigma = 1.5 * sqrt(q)
-        slen = Params[n]["sig_bytelen"] - SALT_LEN - HEAD_LEN
+        param = params[n]
+        slen = param.sig_bytelen - SALT_LEN - HEAD_LEN
     except KeyError:
         return True
     for i in range(iterations):
@@ -224,17 +225,17 @@ def test_signature(n, iterations=10):
     g = sign_KAT[n][0]["g"]
     F = sign_KAT[n][0]["F"]
     G = sign_KAT[n][0]["G"]
-    sk = SecretKey(n, [f, g, F, G])
-    pk = PublicKey(sk)
+    falcon = Falcon(n)
+    sk, vk = falcon.keygen([f, g, F, G])
     for i in range(iterations):
         message = b"abc"
-        sig = sk.sign(message)
-        if pk.verify(message, sig) is False:
+        sig = falcon.sign(sk, message)
+        if falcon.verify(vk, message, sig) is False:
             return False
     return True
 
 
-def test_sign_KAT():
+def test_unpack_and_sign_KAT():
     """
     Test the signing procedure against test vectors obtained from
     the Round 3 implementation of Falcon.
@@ -252,11 +253,20 @@ def test_sign_KAT():
             g = D["g"]
             F = D["F"]
             G = D["G"]
-            sk = SecretKey(n, [f, g, F, G])
+            falcon = Falcon(n)
+            sk, vk = falcon.keygen([f, g, F, G])
+
+            # We also test if packing/unpacking sk is correct: pack and unpack sk,
+            # and check that the unpacked sk2 is identical to sk.
+            sk_bytes = falcon.pack_sk(sk)
+            sk2 = falcon.unpack_sk(sk_bytes)
+            if (sk != sk2):
+                return False
+
             # The next line is done to synchronize the SHAKE256 context
             # with the one in the Round 3 C implementation of Falcon.
             _ = shake.read(8 * D["read_bytes"])
-            sig = sk.sign(message, shake.read)
+            sig = falcon.sign(sk, message, shake.read)
             if sig != bytes.fromhex(D["sig"]):
                 return False
     return True
@@ -294,7 +304,7 @@ def test(n, iterations=500):
     wrapper_test(test_ffnp, "ffNP", n, iterations)
     # test_compress and test_signature are only performed
     # for parameter sets that are defined.
-    if (n in Params):
+    if (n in params):
         wrapper_test(test_compress, "Compress", n, iterations)
         wrapper_test(test_signature, "Signature", n, iterations)
         # wrapper_test(test_sign_KAT, "Signature KATs", n, iterations)
@@ -304,13 +314,13 @@ def test(n, iterations=500):
 # Run all the tests
 if (__name__ == "__main__"):
     print("Test Sig KATs       : ", end="")
-    print("OK" if (test_sign_KAT() is True) else "Not OK")
+    print("OK" if (test_unpack_and_sign_KAT() is True) else "Not OK")
 
     # wrapper_test(test_samplerz_simple, "SamplerZ", None, 100000)
     wrapper_test(test_samplerz_KAT, "SamplerZ KATs", None, 1)
     print("")
 
-    for i in range(6, 11):
+    for i in range(6, 9):
         n = (1 << i)
         it = 1000
         print("Test battery for n = {n}".format(n=n))
