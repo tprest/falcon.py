@@ -24,15 +24,6 @@ This repository contains the following files (roughly in order of dependency):
 
 ## How to use
 
-1. Generate a secret key `sk = SecretKey(n)`
-1. Generate the corresponding public key `pk = PublicKey(sk)`
-1. Now we can sign messages:
-   - To plainly sign a message m: `sig = sk.sign(m)`
-   - To sign a message m with a pre-chosen 40-byte salt: `sig = sk.sign(m, salt)`
-   Note that the message MUST be a byte array or byte string.
-1. We can also verify signatures: `pk.verify(m, sig)`
-
-
 1. Import the module: `from falcon import Falcon`
 2. Generate a Falcon instance: `falcon = Falcon(n)`
 3. Generate a keypair `sk, vk = falcon.keygen()`
